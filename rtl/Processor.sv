@@ -1,0 +1,121 @@
+`default_nettype none
+
+import Isa::*;
+
+/**
+ * Mini serial processor. Communicates with the ALU through a SPI.
+ *
+ * TODO: 106 ciclos (1060ps / 5ps*2) = calculo qtd ciclos para realizar uma operação
+ * TODO: finish doc
+ *
+ * [wire]  i_clock:       System clock;
+ * [wire]  i_reset:       Reset signal;
+ * [wire]  i_instruction: Instruction to be executed.
+ */
+module Processor(
+	input var logic i_clock,
+	input var logic i_reset,
+	input var Instruction i_instruction,
+
+	Spi.MasterSpi spi
+);
+
+	/**
+	 * Register bank. There are REGISTER_BANK_SIZE positions, each with REGISTER_SIZE bits.
+	 */
+	logic [REGISTER_BANK_SIZE - 1 : 0] [REGISTER_SIZE - 1 : 0] registers;
+
+	/*
+	 * Packet that will be received from the ALU.
+	 */
+	logic [REGISTER_SIZE - 1 : 0] alu_packet_in;
+
+	/**
+	 * Counter to keep track of alu_packet_in bits received from the ALU.
+	 */
+	int alu_counter_in;
+
+	/*
+	 * Packet that will be transmitted to the ALU.
+	 */
+	AluPacket alu_packet_out;
+
+	/**
+	 * Counter to keep track of alu_packet_out bits sent to the ALU.
+	 */
+	int alu_counter_out;
+
+	AluOperation alu_op;
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_1;
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
+
+	typedef enum logic [6:0] {
+		FETCH         = 7'b000_0001,
+		EXECUTE       = 7'b000_0010,
+		ALU_SEND      = 7'b000_0100,
+		ALU_SENDING   = 7'b000_1000,
+		ALU_RECEIVE   = 7'b001_0000,
+		ALU_RECEIVING = 7'b010_0000,
+		ALU_STORE     = 7'b100_0000
+	} state_t;
+
+	state_t current_state;
+	state_t next_state;
+
+	assign spi.sclk = i_clock;
+
+	// `nss` deve ser 0 apenas quando quisermos transmitir/receber
+	assign spi.nss = ~(current_state inside { ALU_SEND, ALU_SENDING, ALU_RECEIVE, ALU_RECEIVING });
+
+	assign spi.mosi = (current_state == ALU_SEND)    ? 1'b1
+									: (current_state == ALU_SENDING) ? alu_packet_out[alu_counter_out]
+									: 1'b0;
+
+	always_comb
+		if (~i_reset) next_state = FETCH;
+		else case (current_state)
+				FETCH:         next_state = (i_instruction == 'b0) ? FETCH : EXECUTE;
+				EXECUTE:       next_state = ALU_SEND;
+				ALU_SEND:      next_state = (~spi.miso && spi.mosi) ? ALU_SENDING : ALU_SEND;
+				ALU_SENDING:   next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? ALU_RECEIVE : ALU_SENDING;
+				ALU_RECEIVE:   next_state = (spi.miso && ~spi.mosi) ? ALU_RECEIVING : ALU_RECEIVE;
+				ALU_RECEIVING: next_state = (alu_counter_in == $bits(alu_packet_in) - 1) ? ALU_STORE : ALU_RECEIVING;
+				ALU_STORE:     next_state = FETCH;
+				default:       next_state = FETCH;
+		endcase
+
+	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
+		if (~i_reset) begin
+			alu_counter_in  <= 0;
+			alu_packet_in   <= 0;
+			alu_counter_out <= 0;
+			alu_packet_out  <= 0;
+			rs_1            <= 0;
+			rs_2            <= 0;
+			rd              <= 0;
+			i_instruction   <= 0;
+		end
+		else begin
+			case (current_state)
+				EXECUTE: begin
+					{ alu_op, rs_1, rs_2, rd } <= i_instruction;
+				end
+				ALU_SEND: begin
+					alu_packet_out <= { registers[rs_2], registers[rs_1], alu_op };
+				end
+				ALU_SENDING: begin
+					alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
+				end
+				ALU_RECEIVING: begin
+					alu_packet_in[alu_counter_in] <= spi.miso;
+					alu_counter_in <= (alu_counter_in == $bits(alu_packet_in) - 1) ? 0 : alu_counter_in + 1;
+				end
+				ALU_STORE: registers[rd] <= alu_packet_in;
+			endcase
+		end
+
+		current_state <= next_state;
+	end: StateMachine
+
+endmodule: Processor
