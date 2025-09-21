@@ -1,7 +1,7 @@
 `default_nettype none
 `timescale 1ps/1ps
 
-module ProcessorTb#(parameter int NumberOfSlaves = 1);
+module ProcessorTb;
 
 logic clock = 0;
 initial forever #5 clock = ~clock;
@@ -11,19 +11,10 @@ initial #10 reset = 1;
 
 Isa::Instruction instruction = 0;
 
-Spi#(NumberOfSlaves) u_spi();
-
-Alu u_alu_dut(
-	.i_clock(clock),
-	.i_reset(reset),
-	.spi(u_spi)
-);
-
 Processor u_processor_dut(
 	.i_clock(clock),
 	.i_reset(reset),
-	.i_instruction(instruction),
-	.spi(u_spi)
+	.i_instruction(instruction)
 );
 
 Isa::Instruction instruction_v [25:0] = '{

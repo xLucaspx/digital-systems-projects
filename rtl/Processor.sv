@@ -3,20 +3,31 @@
 import Isa::*;
 
 /**
- * Mini serial processor. Communicates with the ALU through a SPI.
+ * Mini serial processor. Communicates with the ALU through an SPI.
  *
- * [wire]      i_clock:       System clock;
- * [wire]      i_reset:       Reset signal;
- * [wire]      i_instruction: Instruction to be executed.
- * [interface] spi:           SPI interface for communication whit the ALU
+ * [wire] i_clock:       System clock;
+ * [wire] i_reset:       Reset signal;
+ * [wire] i_instruction: Instruction to be executed.
  */
 module Processor(
 	input var logic i_clock,
 	input var logic i_reset,
-	input var Instruction i_instruction,
-
-	Spi.MasterSpi spi
+	input var Instruction i_instruction
 );
+
+	/**
+	 * SPI interface for communication with the Alu.
+	 */
+	Spi#(1) u_spi();
+
+	/**
+	 * Arithmetic logic unit instance.
+	 */
+	Alu u_alu(
+		.i_clock(i_clock),
+		.i_reset(i_reset),
+		.spi(u_spi)
+	);
 
 	/**
 	 * Register bank. There are REGISTER_BANK_SIZE positions, each with REGISTER_SIZE bits.
@@ -61,11 +72,11 @@ module Processor(
 	state_t current_state;
 	state_t next_state;
 
-	assign spi.sclk = i_clock;
+	assign u_spi.sclk = i_clock;
 
-	assign spi.nss = ~(current_state inside { ALU_SEND, ALU_SENDING, ALU_RECEIVE, ALU_RECEIVING });
+	assign u_spi.nss = ~(current_state inside { ALU_SEND, ALU_SENDING, ALU_RECEIVE, ALU_RECEIVING });
 
-	assign spi.mosi = (current_state == ALU_SEND)    ? 1'b1
+	assign u_spi.mosi = (current_state == ALU_SEND)    ? 1'b1
 									: (current_state == ALU_SENDING) ? alu_packet_out[alu_counter_out]
 									: 1'b0;
 
@@ -74,9 +85,9 @@ module Processor(
 		else case (current_state)
 				FETCH:         next_state = (i_instruction == 'b0) ? FETCH : EXECUTE;
 				EXECUTE:       next_state = ALU_SEND;
-				ALU_SEND:      next_state = (~spi.miso && spi.mosi) ? ALU_SENDING : ALU_SEND;
+				ALU_SEND:      next_state = (~u_spi.miso && u_spi.mosi) ? ALU_SENDING : ALU_SEND;
 				ALU_SENDING:   next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? ALU_RECEIVE : ALU_SENDING;
-				ALU_RECEIVE:   next_state = (spi.miso && ~spi.mosi) ? ALU_RECEIVING : ALU_RECEIVE;
+				ALU_RECEIVE:   next_state = (u_spi.miso && ~u_spi.mosi) ? ALU_RECEIVING : ALU_RECEIVE;
 				ALU_RECEIVING: next_state = (alu_counter_in == $bits(alu_packet_in) - 1) ? ALU_STORE : ALU_RECEIVING;
 				ALU_STORE:     next_state = FETCH;
 				default:       next_state = FETCH;
@@ -104,7 +115,7 @@ module Processor(
 					alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
 				end
 				ALU_RECEIVING: begin
-					alu_packet_in[alu_counter_in] <= spi.miso;
+					alu_packet_in[alu_counter_in] <= u_spi.miso;
 					alu_counter_in <= (alu_counter_in == $bits(alu_packet_in) - 1) ? 0 : alu_counter_in + 1;
 				end
 				ALU_STORE: registers[rd] <= alu_packet_in;

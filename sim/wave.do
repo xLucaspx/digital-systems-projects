@@ -2,43 +2,43 @@ onerror {resume}
 quietly WaveActivateNextPane {} 0
 
 add wave -noupdate -divider TestBench
-add wave -noupdate -label clock       -color navy     /ProcessorTb/clock
-add wave -noupdate -label reset       -color navy     /ProcessorTb/reset
+add wave -noupdate -label clock                       /ProcessorTb/clock
+add wave -noupdate -label reset                       /ProcessorTb/reset
 add wave -noupdate -label instruction -radix unsigned /ProcessorTb/instruction
 
 add wave -noupdate -divider SPI
-add wave -noupdate -label sclk -color navy /ProcessorTb/u_spi/sclk
-add wave -noupdate -label miso -color navy /ProcessorTb/u_spi/miso
-add wave -noupdate -label mosi -color navy /ProcessorTb/u_spi/mosi
-add wave -noupdate -label nss  -color navy /ProcessorTb/u_spi/nss
-
-add wave -noupdate -divider ALU
-add wave -noupdate -label i_clock       -color navy        /ProcessorTb/u_alu_dut/i_clock
-add wave -noupdate -label i_reset       -color navy        /ProcessorTb/u_alu_dut/i_reset
-add wave -noupdate -label current_state                    /ProcessorTb/u_alu_dut/current_state
-add wave -noupdate -label next_state                       /ProcessorTb/u_alu_dut/next_state
-add wave -noupdate -label packet_in     -radix hexadecimal /ProcessorTb/u_alu_dut/packet_in
-add wave -noupdate -label counter_in    -radix decimal     /ProcessorTb/u_alu_dut/counter_in
-add wave -noupdate -label alu_op                           /ProcessorTb/u_alu_dut/op_code
-add wave -noupdate -label op_1          -radix hexadecimal /ProcessorTb/u_alu_dut/op_1
-add wave -noupdate -label op_2          -radix hexadecimal /ProcessorTb/u_alu_dut/op_2
-add wave -noupdate -label packet_out    -radix hexadecimal /ProcessorTb/u_alu_dut/packet_out
-add wave -noupdate -label counter_out   -radix decimal     /ProcessorTb/u_alu_dut/counter_out
+add wave -noupdate -label sclk /ProcessorTb/u_processor_dut/u_spi/sclk
+add wave -noupdate -label miso /ProcessorTb/u_processor_dut/u_spi/miso
+add wave -noupdate -label mosi /ProcessorTb/u_processor_dut/u_spi/mosi
+add wave -noupdate -label nss  /ProcessorTb/u_processor_dut/u_spi/nss
 
 add wave -noupdate -divider Processor
-add wave -noupdate -label i_clock         -color navy        /ProcessorTb/u_processor_dut/i_clock
-add wave -noupdate -label i_reset         -color navy        /ProcessorTb/u_processor_dut/i_reset
+add wave -noupdate -label i_clock                            /ProcessorTb/u_processor_dut/i_clock
+add wave -noupdate -label i_reset                            /ProcessorTb/u_processor_dut/i_reset
 add wave -noupdate -label current_state                      /ProcessorTb/u_processor_dut/current_state
 add wave -noupdate -label next_state                         /ProcessorTb/u_processor_dut/next_state
 add wave -noupdate -label i_instruction   -radix unsigned    /ProcessorTb/u_processor_dut/i_instruction
-add wave -noupdate -label alu_op                             /ProcessorTb/u_processor_dut/alu_op
+add wave -noupdate -label operation                          /ProcessorTb/u_processor_dut/operation
 add wave -noupdate -label rs_1            -radix unsigned    /ProcessorTb/u_processor_dut/rs_1
 add wave -noupdate -label rs_2            -radix unsigned    /ProcessorTb/u_processor_dut/rs_2
 add wave -noupdate -label rd              -radix unsigned    /ProcessorTb/u_processor_dut/rd
-add wave -noupdate -label alu_packet_in   -radix hexadecimal /ProcessorTb/u_processor_dut/alu_packet_in
-add wave -noupdate -label alu_counter_in  -radix decimal     /ProcessorTb/u_processor_dut/alu_counter_in
+add wave -noupdate -label packet_in       -radix hexadecimal /ProcessorTb/u_processor_dut/packet_in
+add wave -noupdate -label counter_in      -radix decimal     /ProcessorTb/u_processor_dut/counter_in
 add wave -noupdate -label alu_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/alu_packet_out
 add wave -noupdate -label alu_counter_out -radix decimal     /ProcessorTb/u_processor_dut/alu_counter_out
+
+add wave -noupdate -divider ALU
+add wave -noupdate -label i_clock                        /ProcessorTb/u_processor_dut/u_alu/i_clock
+add wave -noupdate -label i_reset                        /ProcessorTb/u_processor_dut/u_alu/i_reset
+add wave -noupdate -label current_state                  /ProcessorTb/u_processor_dut/u_alu/current_state
+add wave -noupdate -label next_state                     /ProcessorTb/u_processor_dut/u_alu/next_state
+add wave -noupdate -label packet_in   -radix hexadecimal /ProcessorTb/u_processor_dut/u_alu/packet_in
+add wave -noupdate -label counter_in  -radix decimal     /ProcessorTb/u_processor_dut/u_alu/counter_in
+add wave -noupdate -label operation                      /ProcessorTb/u_processor_dut/u_alu/op_code
+add wave -noupdate -label op_1        -radix hexadecimal /ProcessorTb/u_processor_dut/u_alu/op_1
+add wave -noupdate -label op_2        -radix hexadecimal /ProcessorTb/u_processor_dut/u_alu/op_2
+add wave -noupdate -label packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/u_alu/packet_out
+add wave -noupdate -label counter_out -radix decimal     /ProcessorTb/u_processor_dut/u_alu/counter_out
 
 add wave -noupdate -divider Registers
 add wave -noupdate -label registers -radix hexadecimal /ProcessorTb/u_processor_dut/registers
