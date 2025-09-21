@@ -46,3 +46,5 @@ O [_testbench_](./sim/ProcessorTb.sv) possui diversas instruções que serão ex
 `$display` para mostrar a execução de cada uma. A simulação também executa uma forma de onda, disponível em
 [`wave.do`](./sim/wave.do); este _script_ separa os sinais por módulos e realiza as configurações necessárias para a
 melhor visualização possível do diagrama de formas de onda gerado pela execução da simulação.
+
+![Diagrama de forma de onda](./docs/waveform.bmp "Exemplo do diagrama de forma de onda esperado após execução da simulação")
