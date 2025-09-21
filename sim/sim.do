@@ -3,27 +3,26 @@ if {[file isdirectory work]} { vdel -all -lib work }
 vlib work
 vmap work work
 
-set TOP_ENTITY {work.ProcessorTb}
-
-proc compileVerilog {args} {
-	foreach filename $args {
-		vlog -work work $filename
-	}
-}
+set SOURCES ""
+set TOP_ENTITY "work.ProcessorTb"
 
 # Interfaces
-compileVerilog ../interface/Spi.sv
+append SOURCES "../interface/Spi.sv "
 
 # Packages
-compileVerilog ../rtl/Isa.sv
+append SOURCES " ../rtl/Isa.sv "
 
 # Modules
-compileVerilog  ../rtl/Alu.sv ../rtl/Processor.sv
+append SOURCES "../rtl/Alu.sv ../rtl/Processor.sv "
 
 # Testbenches
-compileVerilog ./ProcessorTb.sv
+append SOURCES "./ProcessorTb.sv "
 
-vsim -voptargs=+acc ${TOP_ENTITY}
+# Compile Verilog (use eval so the SOURCES string is split into words)
+eval vlog -work work $SOURCES
+
+# Run testbench
+vsim -voptargs=+acc $TOP_ENTITY
 
 do wave.do
 run 30ns
