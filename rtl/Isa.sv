@@ -40,8 +40,8 @@ package Isa;
 	 * By convention, the `op_code` should be transmitted first.
 	 */
 	typedef struct packed {
-		logic [REGISTER_SIZE : 0] op_2;
-		logic [REGISTER_SIZE : 0] op_1;
+		logic [REGISTER_SIZE - 1 : 0] op_2;
+		logic [REGISTER_SIZE - 1 : 0] op_1;
 		AluOperation op_code;
 	} AluPacket;
 
