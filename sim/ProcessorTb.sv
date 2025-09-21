@@ -1,7 +1,6 @@
 `default_nettype none
+`timescale 1ps/1ps
 
-// TODO: `timescale 1ns/1ps
-// TODO: document testbench
 module ProcessorTb#(parameter int NumberOfSlaves = 1);
 
 logic clock = 0;
@@ -49,17 +48,17 @@ Isa::Instruction instruction_v [25:0] = '{
 	'd10: { Isa::SUB, 10'd1012, 10'd1006, 10'd1000 },
 	'd9 : { Isa::ADD, 10'd1009, 10'd1003, 10'd999  },
 
-	'd8 : { Isa:: ADD, 10'd995, 10'd996, 10'd998 },
-	'd7 : { Isa:: ADD, 10'd997, 10'd998, 10'd998 },
+	'd8 : { Isa:: ADD, 10'd995, 10'd996, 10'd998   },
+	'd7 : { Isa:: ADD, 10'd997, 10'd998, 10'd998   },
 
-	'd6 : { Isa:: AND, 10'd995, 10'd996, 10'd998 },
-	'd5 : { Isa:: AND, 10'd997, 10'd998, 10'd998 },
+	'd6 : { Isa:: AND, 10'd995, 10'd996, 10'd998   },
+	'd5 : { Isa:: AND, 10'd997, 10'd998, 10'd998   },
 
-	'd4 : { Isa:: OR, 10'd995, 10'd996, 10'd998 },
-	'd3 : { Isa:: OR, 10'd997, 10'd998, 10'd998 },
+	'd4 : { Isa:: OR, 10'd995, 10'd996, 10'd998    },
+	'd3 : { Isa:: OR, 10'd997, 10'd998, 10'd998    },
 
-	'd2 : { Isa:: SUB, 10'd995, 10'd996, 10'd998 },
-	'd1 : { Isa:: SUB, 10'd997, 10'd998, 10'd998 },
+	'd2 : { Isa:: SUB, 10'd995, 10'd996, 10'd998   },
+	'd1 : { Isa:: SUB, 10'd997, 10'd998, 10'd998   },
 	'd0 : 'b0
 };
 
@@ -75,12 +74,12 @@ initial begin
 
 		instruction = instruction_v[i];
 
-		if (~instruction) #1060 continue;
-
-		// esperar até o processador entrar no estado ALU_STORE
-		@(posedge clock iff (u_processor_dut.current_state == u_processor_dut.ALU_STORE));
-		// esperar a próxima borda de clock (quando a escrita acontece)
-		@(posedge clock);
+		if (instruction == 'b0) begin
+			$display("[NOOP] %0t: instr[%0d] op=%s rd=%0d rs1=%0d rs2=%0d",
+				$time, i, instruction.op_code, instruction.rd, instruction.rs_1, instruction.rs_2
+			);
+			#1060 continue;
+		end
 
 		src1 = u_processor_dut.registers[instruction.rs_1];
 		src2 = u_processor_dut.registers[instruction.rs_2];
@@ -93,28 +92,20 @@ initial begin
 			default:  expected = 'x;
 		endcase
 
+		// wait until the processor enters enters in the ALU_STORE state
+		@(posedge clock iff (u_processor_dut.current_state == u_processor_dut.ALU_STORE));
+		// then wait until the next clock edge, when the writing happens
+		@(posedge clock);
+
 		actual = u_processor_dut.registers[instruction.rd];
 
 		if (expected === actual) begin
 			$display("[PASS] %0t: instr[%0d] op=%s rd=%0d rs1=%0d rs2=%0d -> %h",
-				$time,
-				i,
-				instruction.op_code,
-				instruction.rd,
-				instruction.rs_1,
-				instruction.rs_2,
-				actual
+				$time, i, instruction.op_code, instruction.rd, instruction.rs_1, instruction.rs_2, actual
 			);
 		end else begin
-			$error("[FAIL] %0t: instr[%0d] op=%s rd=%0d rs1=%0d rs2=%0d expected=%h actual=%h",
-				$time,
-				i,
-				instruction.op_code,
-				instruction.rd,
-				instruction.rs_1,
-				instruction.rs_2,
-				expected,
-				actual
+			$error("[FAIL] %0t: instr[%0d] op=%s rd=%0d rs1=%0d rs2=%0d -> expected=%h actual=%h",
+				$time, i, instruction.op_code, instruction.rd, instruction.rs_1, instruction.rs_2, expected, actual
 			);
 		end
 	end
