@@ -5,12 +5,10 @@ import Isa::*;
 /**
  * Mini serial processor. Communicates with the ALU through a SPI.
  *
- * TODO: 106 ciclos (1060ps / 5ps*2) = calculo qtd ciclos para realizar uma operação
- * TODO: finish doc
- *
- * [wire]  i_clock:       System clock;
- * [wire]  i_reset:       Reset signal;
- * [wire]  i_instruction: Instruction to be executed.
+ * [wire]      i_clock:       System clock;
+ * [wire]      i_reset:       Reset signal;
+ * [wire]      i_instruction: Instruction to be executed.
+ * [interface] spi:           SPI interface for communication whit the ALU
  */
 module Processor(
 	input var logic i_clock,
@@ -65,7 +63,6 @@ module Processor(
 
 	assign spi.sclk = i_clock;
 
-	// `nss` deve ser 0 apenas quando quisermos transmitir/receber
 	assign spi.nss = ~(current_state inside { ALU_SEND, ALU_SENDING, ALU_RECEIVE, ALU_RECEIVING });
 
 	assign spi.mosi = (current_state == ALU_SEND)    ? 1'b1
@@ -94,7 +91,6 @@ module Processor(
 			rs_1            <= 0;
 			rs_2            <= 0;
 			rd              <= 0;
-			i_instruction   <= 0;
 		end
 		else begin
 			case (current_state)
