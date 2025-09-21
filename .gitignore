@@ -2,3 +2,7 @@ work/
 *.wlf
 modelsim.ini
 transcript
+.vscode/
+.env
+.svl*
+.DS_Store
