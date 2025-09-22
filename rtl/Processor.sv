@@ -23,9 +23,9 @@ import Isa::*;
  * TODO: waveform groups
  * TODO: module regbank (?)
  *
- * [wire]      i_clock:       System clock;
- * [wire]      i_reset:       Reset signal;
- * [wire]      i_instruction: Instruction to be executed. TODO: interface memory
+ * - i_clock:       System clock;
+ * - i_reset:       Reset signal;
+ * - i_instruction: Instruction to be executed. TODO: interface memory
  */
 module Processor(
 	input var logic i_clock,
@@ -33,18 +33,32 @@ module Processor(
 	input var Instruction i_instruction
 );
 
-	/**
-	 * SPI interface for communication with other modules (Alu, Multiplier etc.).
-	 */
-	Spi#(3) u_spi();
-
 	localparam int ALU_NSS_POSITION = 0;
 	localparam int BAS_NSS_POSITION = 1;
 	localparam int MUL_NSS_POSITION = 2;
 
-	Alu           #(.NssPosition(ALU_NSS_POSITION)) u_alu(.i_clock(i_clock), .i_reset(i_reset), .spi(u_spi));
-	Multiplier    #(.NssPosition(MUL_NSS_POSITION)) u_mul(.i_clock(i_clock), .i_reset(i_reset), .spi(u_spi));
-	BarrelShifter #(.NssPosition(BAS_NSS_POSITION)) u_bas(.i_clock(i_clock), .i_reset(i_reset), .spi(u_spi));
+	/**
+	 * SPI interface for communication with other modules (Alu, Multiplier etc.).
+	 */
+	Spi #(3) u_spi();
+
+	Alu #(.NssPosition(ALU_NSS_POSITION)) u_alu(
+		.i_clock(i_clock),
+		.i_reset(i_reset),
+		.spi(u_spi)
+	);
+
+	BarrelShifter #(.NssPosition(BAS_NSS_POSITION)) u_bas(
+		.i_clock(i_clock),
+		.i_reset(i_reset),
+		.spi(u_spi)
+	);
+
+	Multiplier #(.NssPosition(MUL_NSS_POSITION)) u_mul(
+		.i_clock(i_clock),
+		.i_reset(i_reset),
+		.spi(u_spi)
+	);
 
 	/**
 	 * Register bank. There are REGISTER_BANK_SIZE positions, each with REGISTER_SIZE bits.
@@ -134,24 +148,24 @@ module Processor(
 	always_comb case (current_state)
 			SEND:    u_spi.mosi = 1'b1;
 			SENDING: if (alu_active)      u_spi.mosi = alu_packet_out[alu_counter_out];
-							 else if (mul_active) u_spi.mosi = mul_packet_out[mul_counter_out];
-							 else if (bas_active) u_spi.mosi = bas_packet_out[bas_counter_out];
+				       else if (mul_active) u_spi.mosi = mul_packet_out[mul_counter_out];
+				       else if (bas_active) u_spi.mosi = bas_packet_out[bas_counter_out];
 			default: u_spi.mosi = 1'b0;
 	endcase
 
 	always_comb
 		if (~i_reset) next_state = FETCH;
 		else case (current_state)
-			FETCH:         next_state = EXECUTE;
-			EXECUTE:       next_state = SEND;
-			SEND:          next_state = (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
-			SENDING:       if (alu_active)      next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
-				             else if (mul_active) next_state = (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
-				             else if (bas_active) next_state = (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
-			RECEIVE:       next_state = (u_spi.miso && ~u_spi.mosi) ? RECEIVING : RECEIVE;
-			RECEIVING:     next_state = (counter_in == $bits(packet_in) - 1) ? STORE : current_state;
-			STORE:         next_state = FETCH;
-			default:       next_state = FETCH;
+			FETCH:     next_state = (i_instruction != 'b0) ? EXECUTE : FETCH;
+			EXECUTE:   next_state = SEND;
+			SEND:      next_state = (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
+			SENDING:   if (alu_active)      next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
+				         else if (mul_active) next_state = (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
+				         else if (bas_active) next_state = (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
+			RECEIVE:   next_state = (u_spi.miso && ~u_spi.mosi) ? RECEIVING : RECEIVE;
+			RECEIVING: next_state = (counter_in == $bits(packet_in) - 1) ? STORE : current_state;
+			STORE:     next_state = FETCH;
+			default:   next_state = FETCH;
 		endcase
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
@@ -167,32 +181,29 @@ module Processor(
 			mul_packet_out  <= '0;
 			mul_counter_out <= '0;
 		end
-		else begin
-			case (current_state)
-				// FETCH:    begin
-				// 	ram_port_cpu.address <= pc;
-				// 	pc <= pc + 1; // TODO ou + 4?
-				// 	{ operation, rs_1, rs_2, rd } <= ram_port_memory.read_data;
-				// end
+		else case (current_state)
+			// FETCH:    begin
+			// 	ram_port_cpu.address <= pc;
+			// 	pc <= pc + 1; // TODO ou + 4?
+			// 	{ operation, rs_1, rs_2, rd } <= ram_port_memory.read_data;
+			// end
+			FETCH:     { operation, rs_1, rs_2, rd } <= i_instruction;
 
-				EXECUTE:   { operation, rs_1, rs_2, rd } <= i_instruction;
+			SEND:      if (alu_active)      alu_packet_out <= { registers[rs_2], registers[rs_1], operation };
+				         else if (mul_active) mul_packet_out <= { registers[rs_2], registers[rs_1] };
+				         else if (bas_active) bas_packet_out <= { registers[rs_2], registers[rs_1], operation };
 
-				SEND:      if (alu_active)      alu_packet_out <= { registers[rs_2], registers[rs_1], operation };
-					         else if (mul_active) mul_packet_out <= { registers[rs_2], registers[rs_1] };
-					         else if (bas_active) bas_packet_out <= { registers[rs_2], registers[rs_1], operation };
+			SENDING:   if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
+				         else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
+				         else if (bas_active) bas_counter_out <= (bas_counter_out == $bits(bas_packet_out) - 1) ? 0 : bas_counter_out + 1;
 
-				SENDING:   if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
-					         else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
-					         else if (bas_active) bas_counter_out <= (bas_counter_out == $bits(bas_packet_out) - 1) ? 0 : bas_counter_out + 1;
+			RECEIVING: begin
+				packet_in[counter_in] <= u_spi.miso;
+				counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
+			end
 
-				RECEIVING: begin
-					packet_in[counter_in] <= u_spi.miso;
-					counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
-				end
-
-				STORE:     registers[rd] <= packet_in;
-			endcase
-		end
+			STORE:     registers[rd] <= packet_in;
+		endcase
 
 		current_state <= next_state;
 	end: StateMachine

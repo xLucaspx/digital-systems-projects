@@ -7,9 +7,9 @@ import Isa::*;
  * multiplier acting as a slave. Should receive an `MulPacket` from the processor and return the `REGISTER_SIZE` result
  * of the operation.
  *
- * i_clock: System clock;
- * i_reset: Reset signal;
- * spi:     SlaveSpi interface for communication with the processor.
+ * - i_clock: System clock;
+ * - i_reset: Reset signal;
+ * - spi:     SlaveSpi interface for communication with the processor.
  */
 module Multiplier#(parameter int NssPosition = 0)(
 	input var logic i_clock,
@@ -38,19 +38,19 @@ module Multiplier#(parameter int NssPosition = 0)(
 
 	assign is_active = ~spi.nss[NssPosition];
 	assign spi.miso = !is_active ? 1'bz
-									: (current_state == SEND)    ? 1'b1
-									: (current_state == SENDING) ? packet_out[counter_out]
-									: 1'b0;
+		              : (current_state == SEND)    ? 1'b1
+		              : (current_state == SENDING) ? packet_out[counter_out]
+		              : 1'b0;
 
 	always_comb
 		if (~i_reset) next_state = RECEIVE;
 		else case(current_state)
-				RECEIVE:   next_state = (is_active && spi.mosi && ~spi.miso) ? RECEIVING : RECEIVE;
-				RECEIVING: next_state = (counter_in == $bits(packet_in) - 1) ? OPERATE : RECEIVING;
-				OPERATE:   next_state = SEND;
-				SEND:      next_state = (is_active && ~spi.mosi && spi.miso) ? SENDING : SEND;
-				SENDING:   next_state = (counter_out == $bits(packet_out) - 1) ? RECEIVE : SENDING;
-				default:   next_state = RECEIVE;
+			RECEIVE:   next_state = (is_active && spi.mosi && ~spi.miso) ? RECEIVING : RECEIVE;
+			RECEIVING: next_state = (counter_in == $bits(packet_in) - 1) ? OPERATE : RECEIVING;
+			OPERATE:   next_state = SEND;
+			SEND:      next_state = (is_active && ~spi.mosi && spi.miso) ? SENDING : SEND;
+			SENDING:   next_state = (counter_out == $bits(packet_out) - 1) ? RECEIVE : SENDING;
+			default:   next_state = RECEIVE;
 		endcase
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: state_machine
@@ -60,18 +60,16 @@ module Multiplier#(parameter int NssPosition = 0)(
 			packet_in   <= 0;
 			packet_out  <= 0;
 		end
-		else begin
-			case (current_state)
-				RECEIVING: begin
-					packet_in[counter_in] <= spi.mosi;
-					counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
-				end
-				OPERATE: packet_out <= op_1 * op_2;
-				SENDING: counter_out <= (counter_out == $bits(packet_out) - 1) ? 0 : counter_out + 1;
-			endcase
+		else case (current_state)
+			RECEIVING: begin
+				packet_in[counter_in] <= spi.mosi;
+				counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
+			end
+			OPERATE: packet_out <= op_1 * op_2;
+			SENDING: counter_out <= (counter_out == $bits(packet_out) - 1) ? 0 : counter_out + 1;
+		endcase
 
-			current_state <= next_state;
-		end
+		current_state <= next_state;
 	end: state_machine
 
 endmodule: Multiplier

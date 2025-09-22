@@ -26,14 +26,16 @@ Processor u_processor_dut(
 	.i_instruction(instruction)
 );
 
-Isa::Instruction instruction_v [26:0] = '{ // TODO inst can have two formats
-	'd26: 'b0,
-	'd25: { Isa::AND, 10'd1023, 10'd1023, 10'd1023 },
-	'd24: { Isa::MUL, 10'd1022, 10'd1022, 10'd1022 },
-	'd23: { Isa::ADD, 10'd1021, 10'd1021, 10'd1021 },
-	'd22: { Isa::OR,  10'd1020, 10'd1020, 10'd1020 },
-	'd21: { Isa::SHL, 10'd1019, 10'd1019, 10'd1019 },
-	'd20: { Isa::SHR, 10'd1018, 10'd1018, 10'd1018 },
+Isa::Instruction instruction_v [27:0] = '{ // TODO inst can have two formats
+	'd27: 'b0,
+	'd26: { Isa::AND, 10'd1023, 10'd1023, 10'd1023 },
+	'd25: { Isa::MUL, 10'd1022, 10'd1022, 10'd1022 },
+	'd24: { Isa::ADD, 10'd1021, 10'd1021, 10'd1021 },
+	'd23: { Isa::OR,  10'd1020, 10'd1020, 10'd1020 },
+	'd22: { Isa::SHL, 10'd1019, 10'd1019, 10'd1019 },
+	'd21: { Isa::SHR, 10'd1018, 10'd1018, 10'd1018 },
+
+	'd20: 'b0,
 
 	'd19: { Isa::OR,  10'd1022, 10'd1019, 10'd1018 },
 	'd18: { Isa::SHR, 10'd1022, 10'd1019, 10'd1017 },
@@ -76,10 +78,11 @@ initial begin
 		instruction = instruction_v[i];
 
 		if (instruction == 'b0) begin
+			#100
 			$display("[NOOP] %05t: instr[%02d] op=%3s rd=%04d rs1=%04d rs2=%04d",
 				$time, i, instruction.op_code, instruction.rd, instruction.rs_1, instruction.rs_2
 			);
-			continue; // TODO check if we really must wait #1060;
+			continue;
 		end
 
 		src1 = u_processor_dut.registers[instruction.rs_1];
@@ -95,10 +98,10 @@ initial begin
 			default:  expected = 'x;
 		endcase
 
-		// wait until the processor enters enters in the ALU_STORE state
-		@(posedge clock iff (u_processor_dut.current_state == u_processor_dut.STORE));
-		// then wait until the next clock edge, when the writing happens
-		@(posedge clock);
+		// wait until the processor exits the STORE state
+		@(negedge clock iff (u_processor_dut.current_state == u_processor_dut.STORE));
+		// then wait until the next clock edge to check the result
+		@(negedge clock);
 
 		actual = u_processor_dut.registers[instruction.rd];
 

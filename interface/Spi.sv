@@ -6,7 +6,7 @@
  * data to or receive data from one slave at a time.
  *
  * - sclk: system clock, signal from master to all slaves;
- * - miso: master in slave out, serial output from a slave to the master;
+ * - miso: master in slave out, serial output from a slave to the master; // TODO tri-net, must always be set to high-Z when not selected
  * - mosi: master out slave in, serial output from master to the selected slave;
  * - nss:  slave select, active on low signal from the master to enable a specific slave.
  */

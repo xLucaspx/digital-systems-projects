@@ -69,8 +69,16 @@ add wave -noupdate -divider Registers
 add wave -noupdate -label registers -radix hexadecimal /ProcessorTb/u_processor_dut/registers
 
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {0 ps} 0}
-quietly wave cursor active 1
+WaveRestoreCursors \
+	{{Cursor 1} {1150 ps} 1} \
+	{{Cursor 2} {2170 ps} 1} \
+	{{Cursor 3} {3220 ps} 1} \
+	{{Cursor 4} {4270 ps} 1} \
+	{{Cursor 5} {5050 ps} 1} \
+	{{Cursor 6} {5830 ps} 1} \
+	{{Cursor 7} {6980 ps} 1} \
+	{{Cursor 8} {0 ps} 0}
+quietly wave cursor active 8
 
 configure wave -namecolwidth 185
 configure wave -valuecolwidth 150

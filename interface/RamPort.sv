@@ -14,21 +14,21 @@ interface RamPort#(
 	logic [DataWidth - 1 : 0] write_data;
 
 	modport Memory (
-			input enable,
-			input write_enable,
-			input address,
-			input write_data,
+		input enable,
+		input write_enable,
+		input address,
+		input write_data,
 
-			output read_data
+		output read_data
 	);
 
 	modport Cpu (
-			input read_data,
+		input read_data,
 
-			output enable,
-			output write_enable,
-			output address,
-			output write_data
+		output enable,
+		output write_enable,
+		output address,
+		output write_data
 	);
 
 endinterface: RamPort
