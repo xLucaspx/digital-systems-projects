@@ -40,6 +40,31 @@ add wave -noupdate -label op_2        -radix hexadecimal /ProcessorTb/u_processo
 add wave -noupdate -label packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/u_alu/packet_out
 add wave -noupdate -label counter_out -radix decimal     /ProcessorTb/u_processor_dut/u_alu/counter_out
 
+add wave -noupdate -divider Shifter
+add wave -noupdate -label i_clock                         /ProcessorTb/u_processor_dut/u_bas/i_clock
+add wave -noupdate -label i_reset                         /ProcessorTb/u_processor_dut/u_bas/i_reset
+add wave -noupdate -label current_state                   /ProcessorTb/u_processor_dut/u_bas/current_state
+add wave -noupdate -label next_state                      /ProcessorTb/u_processor_dut/u_bas/next_state
+add wave -noupdate -label packet_in    -radix hexadecimal /ProcessorTb/u_processor_dut/u_bas/packet_in
+add wave -noupdate -label counter_in   -radix decimal     /ProcessorTb/u_processor_dut/u_bas/counter_in
+add wave -noupdate -label operation                       /ProcessorTb/u_processor_dut/u_bas/op_code
+add wave -noupdate -label op           -radix hexadecimal /ProcessorTb/u_processor_dut/u_bas/op
+add wave -noupdate -label shift_amount -radix unsigned    /ProcessorTb/u_processor_dut/u_bas/shift_amount
+add wave -noupdate -label packet_out   -radix hexadecimal /ProcessorTb/u_processor_dut/u_bas/packet_out
+add wave -noupdate -label counter_out  -radix decimal     /ProcessorTb/u_processor_dut/u_bas/counter_out
+
+add wave -noupdate -divider Multiplier
+add wave -noupdate -label i_clock                        /ProcessorTb/u_processor_dut/u_mul/i_clock
+add wave -noupdate -label i_reset                        /ProcessorTb/u_processor_dut/u_mul/i_reset
+add wave -noupdate -label current_state                  /ProcessorTb/u_processor_dut/u_mul/current_state
+add wave -noupdate -label next_state                     /ProcessorTb/u_processor_dut/u_mul/next_state
+add wave -noupdate -label packet_in   -radix hexadecimal /ProcessorTb/u_processor_dut/u_mul/packet_in
+add wave -noupdate -label counter_in  -radix decimal     /ProcessorTb/u_processor_dut/u_mul/counter_in
+add wave -noupdate -label op_1        -radix hexadecimal /ProcessorTb/u_processor_dut/u_mul/op_1
+add wave -noupdate -label op_2        -radix hexadecimal /ProcessorTb/u_processor_dut/u_mul/op_2
+add wave -noupdate -label packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/u_mul/packet_out
+add wave -noupdate -label counter_out -radix decimal     /ProcessorTb/u_processor_dut/u_mul/counter_out
+
 add wave -noupdate -divider Registers
 add wave -noupdate -label registers -radix hexadecimal /ProcessorTb/u_processor_dut/registers
 

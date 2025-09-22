@@ -6,14 +6,14 @@ vmap work work
 set SOURCES ""
 set TOP_ENTITY "work.ProcessorTb"
 
-# Interfaces
-append SOURCES "../interface/Spi.sv "
-
 # Packages
-append SOURCES " ../rtl/Isa.sv "
+append SOURCES "../rtl/Isa.sv "
+
+# Interfaces
+append SOURCES "../interface/RamPort.sv ../interface/Spi.sv "
 
 # Modules
-append SOURCES "../rtl/Alu.sv ../rtl/Processor.sv "
+append SOURCES "../rtl/SinglePortRam.sv ../rtl/Alu.sv ../rtl/BarrelShifter.sv ../rtl/Multiplier.sv ../rtl/Processor.sv "
 
 # Testbenches
 append SOURCES "./ProcessorTb.sv "

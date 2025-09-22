@@ -3,15 +3,15 @@
 import Isa::*;
 
 /**
- * Arithmetic Logic Unit (ALU) for the mini serial processor. The communication with the processor occurs through an
- * SPI, with the ALU acting as a slave. Should receive an `AluPacket` from the processor and return the `REGISTER_SIZE`
+ * Barrel shifter block for the mini serial processor. The communication with the processor occurs through an SPI, with
+ * the shifter acting as a slave. Should receive an `ShifterPacket` from the processor and return the `REGISTER_SIZE`
  * result of the operation.
  *
  * i_clock: System clock;
  * i_reset: Reset signal;
  * spi:     SlaveSpi interface for communication with the processor.
  */
-module Alu#(parameter int NssPosition = 0)(
+module BarrelShifter#(parameter int NssPosition = 0)(
 	input var logic i_clock,
 	input var logic i_reset,
 
@@ -25,20 +25,18 @@ module Alu#(parameter int NssPosition = 0)(
 
 	logic is_active;
 
-	AluPacket packet_in;
+	ShifterPacket packet_in;
 	int counter_in;
 
 	logic [REGISTER_SIZE - 1 : 0] packet_out;
 	int counter_out;
 
 	Operation op_code;
-	logic [REGISTER_SIZE - 1 : 0] op_1;
-	logic [REGISTER_SIZE - 1 : 0] op_2;
+	logic [REGISTER_SIZE - 1 : 0] op;
+	logic [$clog2(REGISTER_SIZE) - 1 : 0] shift_amount;
 
-	assign { op_2, op_1, op_code } = packet_in;
+	assign { shift_amount, op, op_code } = packet_in;
 
-	// Drive MISO only when this slave is selected; otherwise leave it high-Z so other slaves can drive the line. Use a
-	// continuous assignment to a net (tri) in the `Spi` interface to avoid multiple procedural drivers warnings.
 	assign is_active = ~spi.nss[NssPosition];
 	assign spi.miso = !is_active ? 1'bz
 									: (current_state == SEND)    ? 1'b1
@@ -71,10 +69,9 @@ module Alu#(parameter int NssPosition = 0)(
 				end
 				OPERATE: begin
 					case (op_code)
-						ADD:     packet_out <= op_1 + op_2;
-						AND:     packet_out <= op_1 & op_2;
-						OR:      packet_out <= op_1 | op_2;
-						default: packet_out <= 0;
+						SHL:     packet_out <= op << shift_amount;
+						SHR:     packet_out <= op >> shift_amount;
+						default: packet_out <= '0;
 					endcase
 				end
 				SENDING: counter_out <= (counter_out == $bits(packet_out) - 1) ? 0 : counter_out + 1;
@@ -84,4 +81,4 @@ module Alu#(parameter int NssPosition = 0)(
 		end
 	end: state_machine
 
-endmodule: Alu
+endmodule: BarrelShifter

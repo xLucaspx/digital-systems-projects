@@ -13,7 +13,7 @@
 interface Spi#(parameter int NumberOfSlaves = 1);
 
 	logic sclk;
-	logic miso;
+	tri miso;
 	logic mosi;
 	logic [NumberOfSlaves - 1 : 0] nss;
 
