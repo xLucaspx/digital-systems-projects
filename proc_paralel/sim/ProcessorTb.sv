@@ -23,8 +23,8 @@ dual_port_ram #(.DATA_WIDTH(DATA_WIDTH)) u_dual_port_a
 Processor u_processor_dut(
 	.i_clock(clock),
 	.i_reset(reset),
-	.mem_a(u_if_dual_port_a),
-	.mem_b(u_if_dual_port_b)
+	.mem_in(u_if_dual_port_a),
+	.mem_out(u_if_dual_port_b)
 );
 
 
@@ -59,7 +59,7 @@ initial begin
 	#CLOCK_TIME;
 	u_processor_dut.rb.regs [0] = 30;
 	u_processor_dut.rb.regs [1] = 10;
-	u_processor_dut.rb.regs [1] = 20;
+	u_processor_dut.rb.regs [2] = 20;
 end
 
 endmodule: ProcessorTb

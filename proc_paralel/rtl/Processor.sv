@@ -5,8 +5,8 @@ import Isa::*;
 module Processor (
     input wire logic i_clock,
     input wire logic i_reset,
-    dual_port_ram_if.CPU mem_a,
-    dual_port_ram_if.MEM mem_b
+    dual_port_ram_if.CPU mem_in,
+    dual_port_ram_if.MEM mem_out
 );
 parameter int REG_COUNT = 16;
 parameter int REG_WIDTH = 16;
@@ -68,8 +68,8 @@ typedef struct packed {
 } execute_to_writeback;
 execute_to_writeback barreira3;
 
-assign mem_a.we = 0;
-assign mem_a.wdata = 0;
+assign mem_in.we = 0;
+assign mem_in.wdata = 0;
 
 // ======================================
 // LÓGICA DOS ESTÁGIOS
@@ -83,10 +83,10 @@ always @(posedge i_clock, negedge i_reset) begin
     end else if (stall_signal) begin
         // Apenas espera
     end else begin
-        mem_a.addr <= PC;
+        mem_in.addr <= PC;
         PC <= PC +1;
-        {barreira1.op_code, barreira1.imm} <= {mem_a.rdata[15:13], mem_a.rdata[12]};
-        {barreira1.rd, barreira1.opa, barreira1.opb} <= {mem_a.rdata[11:8], mem_a.rdata[7:4], mem_a.rdata[3:0]};
+        {barreira1.op_code, barreira1.imm} <= {mem_in.rdata[15:13], mem_in.rdata[12]};
+        {barreira1.rd, barreira1.opa, barreira1.opb} <= {mem_in.rdata[11:8], mem_in.rdata[7:4], mem_in.rdata[3:0]};
     end
 end
 
@@ -133,18 +133,16 @@ end
 	int alu_counter_out;
 
 	Instruction alu_op;
-	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_1;
-	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
-	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
 
-	typedef enum logic [6:0] {
-		WAIT         = 7'b000_0001,
-		EXECUTE       = 7'b000_0010,
-		SEND      = 7'b000_0100,
-		SENDING   = 7'b000_1000,
-		RECEIVE   = 7'b001_0000,
-		RECEIVING = 7'b010_0000,
-		STORE     = 7'b100_0000
+	typedef enum logic [7:0] {
+		WAIT          = 8'b0000_0001,
+		EXECUTE       = 8'b0000_0010,
+		SEND          = 8'b0000_0100,
+		SENDING       = 8'b0000_1000,
+		RECEIVE       = 8'b0001_0000,
+		RECEIVING     = 8'b0010_0000,
+		STORE         = 8'b0100_0000,
+		STORING       = 8'b1000_0000
 	} state_t;
 
 	state_t current_state;
@@ -167,7 +165,7 @@ end
 				SHR: spi_signal = 'b011; // Operações do SHR
 				default: spi_signal = 'b111;
 			endcase
-		end else if (current_state == STORE) begin
+		end else if (current_state == STORE || current_state == STORING) begin
 			spi_signal = 'b111;
 		end
 	end
@@ -179,13 +177,14 @@ end
 	always_comb
 		if (~i_reset) next_state = WAIT;
 		else case (current_state)
-				WAIT: next_state = first_execute > 1 && spi_signal != 'b111 ? EXECUTE : WAIT;
+				WAIT: next_state = spi_signal != 'b111 ? EXECUTE : WAIT;
 				EXECUTE:       next_state = SEND;
 				SEND:      next_state = (~spi.miso[2] && spi.mosi || ~spi.miso[1] && spi.mosi || ~spi.miso[0] && spi.mosi) ? SENDING : SEND;
 				SENDING:   next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
 				RECEIVE:   next_state = (spi.miso[2] && ~spi.mosi || spi.miso[1] && ~spi.mosi || spi.miso[0] && ~spi.mosi) ? RECEIVING : RECEIVE;
 				RECEIVING: next_state = (alu_counter_in == $bits(barreira2.value_opa) - 1) ? STORE : RECEIVING;
-				STORE:     next_state = WAIT;
+				STORE:     next_state = STORING;
+				STORING:		next_state = WAIT;
 				default:       next_state = WAIT;
 			endcase
 		
@@ -198,12 +197,7 @@ end
 			alu_counter_in  <= 0;
 			alu_counter_out <= 0;
 			alu_packet_out  <= 0;
-			rs_1            <= 0;
-			rs_2            <= 0;
-			rd              <= 0;
-			// barreira1		<= 0;
-			// barreira2		<= 0;
-			// barreira3		<= 0;
+
 		end
 		else begin
 			case (current_state)
@@ -227,7 +221,7 @@ end
 		
 	end: StateMachine
 
-assign stall = current_state == WAIT && spi_signal == 3'b111  || current_state == STORE ? 4'b0000 : 4'b0100;
+assign stall = spi_signal == 3'b111 && current_state != STORE ? 4'b0000 : 4'b0100;
 // execute
 always @(posedge i_clock, negedge i_reset) begin
     if (~i_reset) begin
@@ -238,15 +232,10 @@ always @(posedge i_clock, negedge i_reset) begin
 		if (first_execute < 3) begin
 			first_execute <= first_execute +1;
 		end
-		if (spi_signal != 'b111) begin
 			barreira3.op_code <= barreira2.op_code;
 			barreira3.rd <= barreira2.rd;
-			barreira3.result <= resultado;
-		end else begin
-			barreira3.op_code <= barreira2.op_code;
-			barreira3.rd <= barreira2.rd;
-			barreira3.result <= barreira2.value_opa;
-		end
+			barreira3.result <= barreira2.op_code == SW || barreira2.op_code == LW ? barreira2.value_opa : resultado;
+		
     end
 end
 
@@ -257,9 +246,9 @@ assign rb_if.waddr = barreira3.rd;
 assign rb_if.wdata = barreira3.result;
 assign rb_if.we = LW != barreira3.op_code;
 
-assign mem_b.we = writeback;
-assign mem_b.addr = barreira3.rd;
-assign mem_b.wdata = barreira3.result;
+assign mem_out.we = writeback;
+assign mem_out.addr = barreira3.rd;
+assign mem_out.wdata = barreira3.result;
 
 always @(posedge i_clock, negedge i_reset) begin
     if (~i_reset) begin
