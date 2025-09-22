@@ -36,8 +36,6 @@ package Isa;
 	 * code in the follwing format:
 	 *
 	 * | op_2 | op_1 | op_code |
-	 *
-	 * By convention, the `op_code` should be transmitted first.
 	 */
 	typedef struct packed {
 		logic [REGISTER_SIZE - 1 : 0] op_2;

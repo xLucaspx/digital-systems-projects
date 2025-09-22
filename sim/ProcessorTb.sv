@@ -66,7 +66,7 @@ initial begin
 		instruction = instruction_v[i];
 
 		if (instruction == 'b0) begin
-			$display("[NOOP] %0t: instr[%0d] op=%s rd=%0d rs1=%0d rs2=%0d",
+			$display("[NOOP] %05t: instr[%02d] op=%3s rd=%04d rs1=%04d rs2=%04d",
 				$time, i, instruction.op_code, instruction.rd, instruction.rs_1, instruction.rs_2
 			);
 			#1060 continue;
@@ -83,19 +83,19 @@ initial begin
 			default:  expected = 'x;
 		endcase
 
-		// wait until the processor enters enters in the ALU_STORE state
-		@(posedge clock iff (u_processor_dut.current_state == u_processor_dut.ALU_STORE));
+		// wait until the processor enters enters in the STORE state
+		@(posedge clock iff (u_processor_dut.current_state == u_processor_dut.STORE));
 		// then wait until the next clock edge, when the writing happens
 		@(posedge clock);
 
 		actual = u_processor_dut.registers[instruction.rd];
 
 		if (expected === actual) begin
-			$display("[PASS] %0t: instr[%0d] op=%s rd=%0d rs1=%0d rs2=%0d -> %h",
+			$display("[PASS] %05t: instr[%02d] op=%3s rd=%04d rs1=%04d rs2=%04d -> %h",
 				$time, i, instruction.op_code, instruction.rd, instruction.rs_1, instruction.rs_2, actual
 			);
 		end else begin
-			$error("[FAIL] %0t: instr[%0d] op=%s rd=%0d rs1=%0d rs2=%0d -> expected=%h actual=%h",
+			$error("[FAIL] %05t: instr[%02d] op=%3s rd=%04d rs1=%04d rs2=%04d -> expected=%h actual=%h",
 				$time, i, instruction.op_code, instruction.rd, instruction.rs_1, instruction.rs_2, expected, actual
 			);
 		end

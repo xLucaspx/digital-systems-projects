@@ -10,7 +10,7 @@ set TOP_ENTITY "work.ProcessorTb"
 append SOURCES "../interface/Spi.sv "
 
 # Packages
-append SOURCES " ../rtl/Isa.sv "
+append SOURCES "../rtl/Isa.sv "
 
 # Modules
 append SOURCES "../rtl/Alu.sv ../rtl/Processor.sv "
