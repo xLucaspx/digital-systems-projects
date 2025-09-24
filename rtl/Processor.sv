@@ -12,14 +12,10 @@ import Isa::*;
  * TODO: barreiras temporais para instruções, e.g., inst_fetched, inst_decoded, inst_execute etc.
  *         - A primeira barreira temporal se refere apenas ao registro da instrução que será utilizada pelo DECODER;
  *
- * TODO: ALU_STORE vira STORE, guardamos o packet da vez na variável que será armazenada.
- * TODO: SEND, SENDING e RECEIVE em um estado só, controlado pela operação
- * TODO: Add Memory IF and PC; PC+4 logic
+ * TODO: Add Memory IF and PC; PC+1 logic
  *	input var Instruction i_instruction, // TODO inst can have two formats
  * TODO: check registers sizes
  * TODO: multiline align with spaces
- * TODO: kill m_active and use case nss 'b001, 'b010 ...
- * TODO: nss for each slave as a parameter (?)
  * TODO: waveform groups
  * TODO: module regbank (?)
  *
@@ -30,7 +26,10 @@ import Isa::*;
 module Processor(
 	input var logic i_clock,
 	input var logic i_reset,
-	input var Instruction i_instruction
+	input var Instruction i_instruction,
+
+	RamPort.Cpu read_ram,
+	RamPort.Memory write_ram
 );
 
 	localparam int ALU_NSS_POSITION = 0;
@@ -184,7 +183,7 @@ module Processor(
 		else case (current_state)
 			// FETCH:    begin
 			// 	ram_port_cpu.address <= pc;
-			// 	pc <= pc + 1; // TODO ou + 4?
+			// 	pc <= pc + 1;
 			// 	{ operation, rs_1, rs_2, rd } <= ram_port_memory.read_data;
 			// end
 			FETCH:     { operation, rs_1, rs_2, rd } <= i_instruction;

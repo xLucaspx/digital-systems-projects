@@ -1,6 +1,5 @@
 `default_nettype none
 
-// TODO dual port RAM
 module SinglePortRam#(
 	parameter int DataWidth = Isa::MEMORY_DATA_WIDTH,
 	parameter int Depth = Isa::MEMORY_DEPTH
@@ -15,6 +14,7 @@ module SinglePortRam#(
 	always_ff @(posedge i_clock)
 		if (ram_port.enable && ram_port.write_enable) memory[ram_port.address] <= ram_port.write_data;
 
-	assign ram_port.read_data = memory[ram_port.address];
+	always_ff @(posedge i_clock)
+		if (ram_port.enable) ram_port.read_data <= memory[ram_port.address];
 
 endmodule: SinglePortRam

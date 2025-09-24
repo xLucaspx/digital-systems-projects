@@ -22,8 +22,8 @@ package Isa;
 		AND = 'h1,
 		OR  = 'h2,
 		MUL = 'h3,
-		SHL = 'h4,
-		SHR = 'h5,
+		SHL = 'h4, // TODO deveria ser ROL
+		SHR = 'h5, // TODO deveria ser ROR
 		LW  = 'h6,
 		SW  = 'h7
 	} Operation;
@@ -32,7 +32,7 @@ package Isa;
 	 * Defines the number of registers available. Addressing any possible register requires `$clog2(REGISTER_BANK_SIZE)`
 	 * bits; this affects the instruction size.
 	 */
-	localparam int REGISTER_BANK_SIZE = 1024; // TODO 16
+	localparam int REGISTER_BANK_SIZE = 16;
 
 	/**
 	 * Defines the size (bit width) of each register.
