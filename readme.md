@@ -32,9 +32,11 @@ cd ./sim/
 vsim -do sim.do
 ```
 
-Alternativamente, é possível utilizar os _scripts_ [`compile.sh`](./compile.sh) para compilar os arquivos fonte,
-verificando se há erros ou _warnings_, e [`run.sh`](./run.sh) para executar a simulação. Estes _scripts_ devem ser
-executados a partir do [**diretório raiz**](./).
+Alternativamente, é possível utilizar os seguintes _scripts_:
+- [`compile.sh`](./compile.sh): compila os arquivos fonte, verificando se há erros ou _warnings_;
+- [`run.sh`](./run.sh): executa a macro [`sim.do`](./sim/sim.do), é equivalente ao comando detalhado acima.
+
+Estes _scripts_ devem ser executados a partir do [**diretório raiz**](./).
 
 > [!important]
 > É imprescindível que cada comando seja rodado a partir do diretório especificado nesta documentação; caso contrário,
