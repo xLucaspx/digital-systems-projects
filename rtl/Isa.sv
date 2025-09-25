@@ -6,7 +6,7 @@
 package Isa;
 
 	localparam int MEMORY_ADDRESS_WIDTH = 8;
-	localparam int MEMORY_DATA_WIDTH = 16;
+	localparam int MEMORY_DATA_WIDTH = 32;
 	localparam int MEMORY_DEPTH = 1 << MEMORY_ADDRESS_WIDTH;
 
 	/**
@@ -38,6 +38,9 @@ package Isa;
 	 * Defines the size (bit width) of each register.
 	 */
 	localparam int REGISTER_SIZE = 32;
+
+	// TODO doc
+	localparam int INSTRUCTION_SIZE = 16; // ($clog2(Operation) + 3 * $clog2(REGISTER_BANK_SIZE) + 1);
 
 	/**
 	 * Packet transmitted to the ALU from the processor. It contains two `REGISTER_SIZE` operands and an `Operation`
@@ -75,6 +78,7 @@ package Isa;
 		Operation op_code;
 	} ShifterPacket;
 
+	// TODO doc
 	/**
 	 * Register instruction format to be decoded and executed by the processor. It's detailed below, with the MSB being the
 	 * rightmost one:
@@ -100,12 +104,23 @@ package Isa;
 	 */
 	typedef struct packed {
 		Operation op_code;
-		// TODO logic i
+		logic is_immediate;
+		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
 		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_1;
 		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
-		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
-	} Instruction;
+	} RegInstruction;
 
-	// TODO ImmediateInstruction
+	typedef struct packed {
+		Operation op_code;
+		logic is_immediate;
+		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
+		logic [MEMORY_ADDRESS_WIDTH - 1 : 0] immediate;
+	} ImmInstruction;
+
+	typedef union packed {
+		RegInstruction reg_format;
+		ImmInstruction imm_format;
+		logic [INSTRUCTION_SIZE - 1 : 0] raw;
+	} Instruction;
 
 endpackage: Isa

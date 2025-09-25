@@ -26,10 +26,9 @@ import Isa::*;
 module Processor(
 	input var logic i_clock,
 	input var logic i_reset,
-	input var Instruction i_instruction,
 
-	RamPort.Cpu read_ram,
-	RamPort.Memory write_ram
+	RamPort.Cpu write_ram,
+	RamPort.Memory read_ram
 );
 
 	localparam int ALU_NSS_POSITION = 0;
@@ -64,7 +63,7 @@ module Processor(
 	 */
 	logic [REGISTER_BANK_SIZE - 1 : 0] [REGISTER_SIZE - 1 : 0] registers;
 
-	// logic [REGISTER_SIZE - 1 : 0] pc; // TODO PC
+	logic [REGISTER_SIZE - 1 : 0] pc;
 
 	/*
 	 * Packet that will be received through the SPI.
@@ -110,31 +109,42 @@ module Processor(
 	logic bas_active;
 	logic mul_active;
 
+	logic [INSTRUCTION_SIZE - 1 : 0] instruction;
 	Operation operation;
+	logic is_immediate;
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_1;
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
-	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
+	logic [MEMORY_ADDRESS_WIDTH - 1 : 0] immediate;
 
-	typedef enum logic [6:0] {
-		FETCH     = 'b000_0001,
-		EXECUTE   = 'b000_0010,
-		SEND      = 'b000_0100,
-		SENDING   = 'b000_1000,
-		RECEIVE   = 'b001_0000,
-		RECEIVING = 'b010_0000,
-		STORE     = 'b100_0000
+	typedef enum logic [7:0] {
+		FETCH      = 'b0000_0001,
+		DECODE     = 'b0000_0010,
+		EXECUTE    = 'b0000_0100,
+		SEND       = 'b0000_1000,
+		SENDING    = 'b0001_0000,
+		RECEIVE    = 'b0010_0000,
+		RECEIVING  = 'b0100_0000,
+		WRITE_BACK = 'b1000_0000
 	} state_t;
 
 	state_t current_state;
 	state_t next_state;
 
+	assign write_ram.enable = 1;
+	assign write_ram.write_data = registers[rd];
+	assign write_ram.write_enable = (current_state == EXECUTE) && (operation == SW);
+	assign write_ram.address = (operation inside { LW, SW } && current_state == EXECUTE) ? immediate : pc;
+
+	assign u_spi.sclk = i_clock;
+
+	assign instruction = ~i_reset ? 'b0 : read_ram.read_data;
+
 	assign alu_active = operation inside { ADD, AND, OR };
 	assign bas_active = operation inside { SHL, SHR };
 	assign mul_active = operation == MUL;
 
-	assign u_spi.sclk = i_clock;
-
-	// `nss` deve ser 0 apenas quando quisermos transmitir/receber
+	// `nss` should be 0 only when transmitting/receiving
 	always_comb
 		if (current_state inside { SEND, SENDING, RECEIVE, RECEIVING }) begin
 			u_spi.nss[ALU_NSS_POSITION] = ~alu_active;
@@ -143,7 +153,7 @@ module Processor(
 		end
 		else u_spi.nss = '1;
 
-	// define o MOSI
+	// MOSI
 	always_comb case (current_state)
 			SEND:    u_spi.mosi = 1'b1;
 			SENDING: if (alu_active)      u_spi.mosi = alu_packet_out[alu_counter_out];
@@ -152,56 +162,63 @@ module Processor(
 			default: u_spi.mosi = 1'b0;
 	endcase
 
+	// PC increment
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (~i_reset) pc = 'b0;
+		else if (current_state == FETCH && instruction != 'b0) pc <= pc + 1;
+
 	always_comb
 		if (~i_reset) next_state = FETCH;
 		else case (current_state)
-			FETCH:     next_state = (i_instruction != 'b0) ? EXECUTE : FETCH;
-			EXECUTE:   next_state = SEND;
-			SEND:      next_state = (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
-			SENDING:   if (alu_active)      next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
-				         else if (mul_active) next_state = (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
-				         else if (bas_active) next_state = (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
-			RECEIVE:   next_state = (u_spi.miso && ~u_spi.mosi) ? RECEIVING : RECEIVE;
-			RECEIVING: next_state = (counter_in == $bits(packet_in) - 1) ? STORE : current_state;
-			STORE:     next_state = FETCH;
-			default:   next_state = FETCH;
+			FETCH:      next_state = (instruction != 'b0) ? DECODE : FETCH;
+			DECODE:     next_state = EXECUTE;
+			EXECUTE:    next_state = is_immediate ? WRITE_BACK : SEND;
+			SEND:       next_state = (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
+			SENDING:    if (alu_active)      next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
+				          else if (mul_active) next_state = (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
+				          else if (bas_active) next_state = (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
+			RECEIVE:    next_state = (u_spi.miso && ~u_spi.mosi) ? RECEIVING : RECEIVE;
+			RECEIVING:  next_state = (counter_in == $bits(packet_in) - 1) ? WRITE_BACK : current_state;
+			WRITE_BACK: next_state = FETCH;
+			default:    next_state = FETCH;
 		endcase
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
 		if (~i_reset) begin
-			// pc              <= '0;
+			operation       <= Operation'('0);
+			is_immediate    <= '0;
 			rs_1            <= '0;
 			rs_2            <= '0;
 			rd              <= '0;
+			immediate       <= '0;
 			packet_in       <= '0;
 			counter_in      <= '0;
 			alu_packet_out  <= '0;
 			alu_counter_out <= '0;
+			bas_packet_out  <= '0;
+			bas_counter_out <= '0;
 			mul_packet_out  <= '0;
 			mul_counter_out <= '0;
 		end
 		else case (current_state)
-			// FETCH:    begin
-			// 	ram_port_cpu.address <= pc;
-			// 	pc <= pc + 1;
-			// 	{ operation, rs_1, rs_2, rd } <= ram_port_memory.read_data;
-			// end
-			FETCH:     { operation, rs_1, rs_2, rd } <= i_instruction;
+			DECODE:     if (instruction[12]) { operation, is_immediate, rd, immediate } <= instruction;
+			            else { operation, is_immediate, rd, rs_1, rs_2 } <= instruction;
 
-			SEND:      if (alu_active)      alu_packet_out <= { registers[rs_2], registers[rs_1], operation };
-				         else if (mul_active) mul_packet_out <= { registers[rs_2], registers[rs_1] };
-				         else if (bas_active) bas_packet_out <= { registers[rs_2], registers[rs_1], operation };
+			SEND:       if (alu_active)      alu_packet_out <= { registers[rs_2], registers[rs_1], operation };
+				          else if (mul_active) mul_packet_out <= { registers[rs_2], registers[rs_1] };
+				          else if (bas_active) bas_packet_out <= { registers[rs_2], registers[rs_1], operation };
 
-			SENDING:   if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
-				         else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
-				         else if (bas_active) bas_counter_out <= (bas_counter_out == $bits(bas_packet_out) - 1) ? 0 : bas_counter_out + 1;
+			SENDING:    if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
+				          else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
+				          else if (bas_active) bas_counter_out <= (bas_counter_out == $bits(bas_packet_out) - 1) ? 0 : bas_counter_out + 1;
 
-			RECEIVING: begin
+			RECEIVING:  begin
 				packet_in[counter_in] <= u_spi.miso;
 				counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
 			end
 
-			STORE:     registers[rd] <= packet_in;
+			WRITE_BACK: if (operation == LW) registers[rd] <= read_ram.read_data;
+				          else if (!is_immediate) registers[rd] <= packet_in;
 		endcase
 
 		current_state <= next_state;
