@@ -70,8 +70,7 @@ add wave -noupdate -expand -group Shifter -label current_state                  
 add wave -noupdate -expand -group Shifter -label next_state                          /ProcessorTb/u_processor_dut/u_bas/next_state
 add wave -noupdate -expand -group Shifter -label packet_in        -radix hexadecimal /ProcessorTb/u_processor_dut/u_bas/packet_in
 add wave -noupdate -expand -group Shifter -label counter_in       -radix decimal     /ProcessorTb/u_processor_dut/u_bas/counter_in
-add wave -noupdate -expand -group Shifter -label shift_amount_raw -radix decimal     /ProcessorTb/u_processor_dut/u_bas/shift_amount_raw
-add wave -noupdate -expand -group Shifter -label shift_amount     -radix decimal     /ProcessorTb/u_processor_dut/u_bas/shift_amount
+add wave -noupdate -expand -group Shifter -label shift_amount     -radix unsigned    /ProcessorTb/u_processor_dut/u_bas/shift_amount
 add wave -noupdate -expand -group Shifter -label operation                           /ProcessorTb/u_processor_dut/u_bas/op_code
 add wave -noupdate -expand -group Shifter -label op_1             -radix hexadecimal /ProcessorTb/u_processor_dut/u_bas/op
 add wave -noupdate -expand -group Shifter -label packet_out       -radix hexadecimal /ProcessorTb/u_processor_dut/u_bas/packet_out

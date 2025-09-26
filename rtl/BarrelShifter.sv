@@ -33,11 +33,9 @@ module BarrelShifter#(parameter int NssPosition = 0)(
 
 	Operation op_code;
 	logic [REGISTER_SIZE - 1 : 0] op;
-	logic [$clog2(REGISTER_SIZE) : 0] shift_amount;
-	logic [$clog2(REGISTER_SIZE) - 1 : 0] shift_amount_raw;
+	logic [$clog2(REGISTER_SIZE) - 1 : 0] shift_amount;
 
-	assign { shift_amount_raw, op, op_code } = packet_in;
-	assign shift_amount = { 1'b0, shift_amount_raw }; // adds an 0 to shift_amount's MSB, considering it unsigned
+	assign { shift_amount, op, op_code } = packet_in;
 
 	assign is_active = ~spi.nss[NssPosition];
 	assign spi.miso = !is_active ? 1'bz

@@ -86,7 +86,7 @@ initial begin
 	logic [Isa::REGISTER_SIZE - 1 : 0] src2;
 	logic [Isa::REGISTER_SIZE - 1 : 0] expected;
 	logic [Isa::REGISTER_SIZE - 1 : 0] actual;
-	logic [$clog2(Isa::REGISTER_SIZE) : 0] shift_amount;
+	logic [$clog2(Isa::REGISTER_SIZE) - 1 : 0] shift_amount;
 
 	for (int i = 0; i < Isa::MEMORY_DEPTH; i++) begin
 		// wait until the processor exits the EXECUTE state
@@ -112,7 +112,7 @@ initial begin
 			{ operation, is_immediate, rd, rs_1, rs_2 } = instruction;
 			src1 = u_processor_dut.registers[rs_1];
 			src2 = u_processor_dut.registers[rs_2];
-			shift_amount = { 1'b0, src2[$clog2(Isa::REGISTER_SIZE) - 1 : 0] };
+			shift_amount = src2[$clog2(Isa::REGISTER_SIZE) - 1 : 0];
 
 			case (operation)
 				Isa::ADD: expected = src1 + src2;
