@@ -10,12 +10,12 @@ package Isa;
 	localparam int MEMORY_DEPTH = 1 << MEMORY_ADDRESS_WIDTH;
 
 	/**
-	 * Number of operations that the ALU can perform.
+	 * Number of operations that the processor can perform.
 	 */
 	localparam int OPERATION_COUNT = 8;
 
 	/**
-	 * Defines the operations that the ALU can perform.
+	 * Defines the operations that the processor can perform.
 	 */
 	typedef enum logic [$clog2(OPERATION_COUNT) - 1 : 0] {
 		ADD = 'h0,
@@ -77,50 +77,5 @@ package Isa;
 		logic [REGISTER_SIZE - 1 : 0] op;
 		Operation op_code;
 	} ShifterPacket;
-
-	// TODO doc
-	/**
-	 * Register instruction format to be decoded and executed by the processor. It's detailed below, with the MSB being the
-	 * rightmost one:
-	 *
-	 * | op_code | rs_1 | rs_2 | rd |
-	 *
-	 * From the instruction format, it's inferred that the instruction size is given by:
-	 *
-	 * $clog2(OPERATION_COUNT) + (3 * $clog2(REGISTER_BANK_SIZE))
-	 *
-	 * E.g.: Considering an ALU with 4 operations and a REGISTER_BANK_SIZE of 2 ** 10 (1024), the instruction size would
-	 * be 2 + 3 * 10 = 32; decoding the instruction `0x12af7642 = 0001 0010 1010 1111 0111 0110 0100 0010` one would find:
-	 *
-	 * - op_code: `00 = 0x0`;
-	 * - rs_1:    `01 0010 1010 = 0x12a`;
-	 * - rs_2:    `11 1101 1101 = 0x3dd`;
-	 * - rd:      `10 0100 0010 = 0x242`.
-	 *
-	 * - op_code: operation code as defined by the set of instructions;
-	 * - rs_1:    register source 1, address of the register that contains the first operand;
-	 * - rs_2:    register source 2, address of the register that contains the second operand;
-	 * - rd:      register destination, address of the register that will receive the result of the operation;
-	 */
-	typedef struct packed {
-		Operation op_code;
-		logic is_immediate;
-		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
-		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_1;
-		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
-	} RegInstruction;
-
-	typedef struct packed {
-		Operation op_code;
-		logic is_immediate;
-		logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
-		logic [MEMORY_ADDRESS_WIDTH - 1 : 0] immediate;
-	} ImmInstruction;
-
-	typedef union packed {
-		RegInstruction reg_format;
-		ImmInstruction imm_format;
-		logic [INSTRUCTION_SIZE - 1 : 0] raw;
-	} Instruction;
 
 endpackage: Isa

@@ -37,8 +37,6 @@ module Alu#(parameter int NssPosition = 0)(
 
 	assign { op_2, op_1, op_code } = packet_in;
 
-	// Drive MISO only when this slave is selected; otherwise leave it high-Z so other slaves can drive the line. Use a
-	// continuous assignment to a net (tri) in the `Spi` interface to avoid multiple procedural drivers warnings.
 	assign is_active = ~spi.nss[NssPosition];
 	assign spi.miso = !is_active ? 1'bz
 		              : (current_state == SEND)    ? 1'b1

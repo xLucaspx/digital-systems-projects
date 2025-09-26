@@ -8,15 +8,9 @@ import Isa::*;
  * TODO: 106 ciclos (1060ps / 5ps*2) = calculo qtd ciclos para realizar uma operação
  * TODO: finish doc
  *
- * TODO: waveform: add and configure cursors
  * TODO: barreiras temporais para instruções, e.g., inst_fetched, inst_decoded, inst_execute etc.
  *         - A primeira barreira temporal se refere apenas ao registro da instrução que será utilizada pelo DECODER;
  *
- * TODO: Add Memory IF and PC; PC+1 logic
- *	input var Instruction i_instruction, // TODO inst can have two formats
- * TODO: check registers sizes
- * TODO: multiline align with spaces
- * TODO: waveform groups
  * TODO: module regbank (?)
  *
  * - i_clock:       System clock;
@@ -57,6 +51,20 @@ module Processor(
 		.i_reset(i_reset),
 		.spi(u_spi)
 	);
+
+	typedef enum logic [7:0] {
+		FETCH      = 'b0000_0001,
+		DECODE     = 'b0000_0010,
+		EXECUTE    = 'b0000_0100,
+		SEND       = 'b0000_1000,
+		SENDING    = 'b0001_0000,
+		RECEIVE    = 'b0010_0000,
+		RECEIVING  = 'b0100_0000,
+		WRITE_BACK = 'b1000_0000
+	} state_t;
+
+	state_t current_state;
+	state_t next_state;
 
 	/**
 	 * Register bank. There are REGISTER_BANK_SIZE positions, each with REGISTER_SIZE bits.
@@ -117,20 +125,6 @@ module Processor(
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
 	logic [MEMORY_ADDRESS_WIDTH - 1 : 0] immediate;
 
-	typedef enum logic [7:0] {
-		FETCH      = 'b0000_0001,
-		DECODE     = 'b0000_0010,
-		EXECUTE    = 'b0000_0100,
-		SEND       = 'b0000_1000,
-		SENDING    = 'b0001_0000,
-		RECEIVE    = 'b0010_0000,
-		RECEIVING  = 'b0100_0000,
-		WRITE_BACK = 'b1000_0000
-	} state_t;
-
-	state_t current_state;
-	state_t next_state;
-
 	assign write_ram.enable = 1;
 	assign write_ram.write_data = registers[rd];
 	assign write_ram.write_enable = (current_state == EXECUTE) && (operation == SW);
@@ -162,11 +156,6 @@ module Processor(
 			default: u_spi.mosi = 1'b0;
 	endcase
 
-	// PC increment
-	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) pc = 'b0;
-		else if (current_state == FETCH && instruction != 'b0) pc <= pc + 1;
-
 	always_comb
 		if (~i_reset) next_state = FETCH;
 		else case (current_state)
@@ -182,6 +171,11 @@ module Processor(
 			WRITE_BACK: next_state = FETCH;
 			default:    next_state = FETCH;
 		endcase
+
+	// PC increment
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (~i_reset) pc <= 'b0;
+		else if (current_state == FETCH && instruction != 'b0) pc <= pc + 1;
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
 		if (~i_reset) begin
