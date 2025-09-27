@@ -3,20 +3,17 @@
 import Isa::*;
 
 /**
- * Mini serial processor. Communicates with the ALU through a SPI.
+ * Mini serial processor. Communicates with the other blocks (ALU, multiplier etc.) through an SPI.
  *
- * TODO: 106 ciclos (1060ps / 5ps*2) = calculo qtd ciclos para realizar uma operação
  * TODO: finish doc
  *
  * TODO: module regbank (?)
- *
- * TODO: ~reset ou !reset ??????
  *
  * TODO: else/default e setar os bgl em 0 quando não for usado, e.g. imm
  *
  * - i_clock:       System clock;
  * - i_reset:       Reset signal;
- * - i_instruction: Instruction to be executed. TODO: interface memory
+ * TODO: interface memory
  */
 module Processor(
 	input var logic i_clock,
@@ -198,9 +195,9 @@ module Processor(
 	// `nss` should be 0 only when transmitting/receiving
 	always_comb
 		if (spi_state inside { SEND, SENDING, RECEIVE, RECEIVING }) begin
-			u_spi.nss[ALU_NSS_POSITION] = ~alu_active;
-			u_spi.nss[BAS_NSS_POSITION] = ~bas_active;
-			u_spi.nss[MUL_NSS_POSITION] = ~mul_active;
+			u_spi.nss[ALU_NSS_POSITION] = !alu_active;
+			u_spi.nss[BAS_NSS_POSITION] = !bas_active;
+			u_spi.nss[MUL_NSS_POSITION] = !mul_active;
 		end
 		else u_spi.nss = '1;
 
@@ -215,7 +212,7 @@ module Processor(
 
 	// Processor state logic
 	always_comb
-		if (~i_reset) begin
+		if (!i_reset) begin
 			next_state = FETCH;
 			spi_active = 0;
 		end else case (current_state)
@@ -237,7 +234,7 @@ module Processor(
 
 	// SPI state logic
 	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) begin
+		if (!i_reset) begin
 			spi_state <= IDLE;
 			spi_done <= 0;
 		end else case (spi_state)
@@ -245,11 +242,11 @@ module Processor(
 				spi_state <= spi_active ? SEND : IDLE;
 				spi_done <= 0;
 			end
-			SEND:      spi_state <= (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
+			SEND:      spi_state <= (!u_spi.miso && u_spi.mosi) ? SENDING : SEND;
 			SENDING:   if (alu_active)      spi_state <= (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
 				         else if (mul_active) spi_state <= (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
 				         else if (bas_active) spi_state <= (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
-			RECEIVE:   spi_state <= (u_spi.miso && ~u_spi.mosi) ? RECEIVING : RECEIVE;
+			RECEIVE:   spi_state <= (u_spi.miso && !u_spi.mosi) ? RECEIVING : RECEIVE;
 			RECEIVING: spi_state <= (counter_in == $bits(packet_in) - 1) ? DONE : RECEIVING;
 			DONE:      begin
 				spi_state <= IDLE;
@@ -259,23 +256,23 @@ module Processor(
 
 	// DECODE logic
 	always_comb
-		if (~i_reset) { operation, is_immediate, rd, rs_1, rs_2, immediate } = '0;
+		if (!i_reset) { operation, is_immediate, rd, rs_1, rs_2, immediate } = '0;
 		else if (instruction_reg[12]) { operation, is_immediate, rd, immediate } = instruction_reg;
 		else { operation, is_immediate, rd, rs_1, rs_2 } = instruction_reg;
 
 	// PC increment
 	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) pc <= '0;
+		if (!i_reset) pc <= '0;
 		else if (current_state == FETCH) pc <= pc + 1;
 
 	// FETCH -> DECODE barrier
 	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) instruction_reg <= '0;
+		if (!i_reset) instruction_reg <= '0;
 		else if (current_state == FETCH) instruction_reg <= read_ram.read_data;
 
 	// DECODE -> EXECUTE barrier
 	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) { opcode_reg , is_immediate_reg, rd_address_reg, rs1_value_reg, rs2_value_reg, immediate_reg } <= '0;
+		if (!i_reset) { opcode_reg , is_immediate_reg, rd_address_reg, rs1_value_reg, rs2_value_reg, immediate_reg } <= '0;
 		 else if (current_state == DECODE) begin
 			opcode_reg <= operation;
 			is_immediate_reg <= is_immediate;
@@ -287,7 +284,7 @@ module Processor(
 
 	// EXECUTE -> WRITE_BACK barrier
 	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) begin
+		if (!i_reset) begin
 			wb_address_reg <= '0;
 			result_reg <= '0;
 		end
@@ -297,7 +294,7 @@ module Processor(
 		end
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
-		if (~i_reset) begin
+		if (!i_reset) begin
 			packet_in       <= '0;
 			counter_in      <= '0;
 			alu_packet_out  <= '0;
@@ -308,7 +305,7 @@ module Processor(
 			mul_counter_out <= '0;
 		end
 		else case (current_state)
-		
+
 			EXECUTE: case (spi_state)
 				SEND:       if (alu_active)      alu_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
 										else if (mul_active) mul_packet_out <= { rs2_value_reg, rs1_value_reg };

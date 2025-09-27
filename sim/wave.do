@@ -111,12 +111,12 @@ TreeUpdate [SetDefaultTree]
 WaveRestoreCursors \
 	{{Cursor 1} {50   ps} 1} \
 	{{Cursor 2} {90   ps} 1} \
-	{{Cursor 3} {1150 ps} 1} \
-	{{Cursor 4} {2180 ps} 1} \
-	{{Cursor 5} {2970 ps} 1} \
-	{{Cursor 6} {4000 ps} 1} \
-	{{Cursor 7} {5060 ps} 1} \
-	{{Cursor 8} {6120 ps} 1} \
+	{{Cursor 3} {1170 ps} 1} \
+	{{Cursor 4} {1210 ps} 1} \
+	{{Cursor 5} {2260 ps} 1} \
+	{{Cursor 6} {3070 ps} 1} \
+	{{Cursor 7} {4150 ps} 1} \
+	{{Cursor 8} {5200 ps} 1} \
 	{{Cursor 9} {0    ps} 0}
 quietly wave cursor active 9
 

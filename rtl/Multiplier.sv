@@ -36,25 +36,25 @@ module Multiplier#(parameter int NssPosition = 0)(
 
 	assign { op_2, op_1 } = packet_in;
 
-	assign is_active = ~spi.nss[NssPosition];
+	assign is_active = !spi.nss[NssPosition];
 	assign spi.miso = !is_active ? 1'bz
 		              : (current_state == SEND)    ? 1'b1
 		              : (current_state == SENDING) ? packet_out[counter_out]
 		              : 1'b0;
 
 	always_comb
-		if (~i_reset) next_state = RECEIVE;
+		if (!i_reset) next_state = RECEIVE;
 		else case(current_state)
-			RECEIVE:   next_state = (is_active && spi.mosi && ~spi.miso) ? RECEIVING : RECEIVE;
+			RECEIVE:   next_state = (is_active && spi.mosi && !spi.miso) ? RECEIVING : RECEIVE;
 			RECEIVING: next_state = (counter_in == $bits(packet_in) - 1) ? OPERATE : RECEIVING;
 			OPERATE:   next_state = SEND;
-			SEND:      next_state = (is_active && ~spi.mosi && spi.miso) ? SENDING : SEND;
+			SEND:      next_state = (is_active && !spi.mosi && spi.miso) ? SENDING : SEND;
 			SENDING:   next_state = (counter_out == $bits(packet_out) - 1) ? RECEIVE : SENDING;
 			default:   next_state = RECEIVE;
 		endcase
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: state_machine
-		if (~i_reset) begin
+		if (!i_reset) begin
 			counter_in  <= 0;
 			counter_out <= 0;
 			packet_in   <= 0;
