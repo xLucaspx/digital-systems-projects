@@ -26,13 +26,23 @@ add wave -noupdate -expand -group Processor -expand -group control     -label cu
 add wave -noupdate -expand -group Processor -expand -group control     -label next_state                         /ProcessorTb/u_processor_dut/next_state
 add wave -noupdate -expand -group Processor -expand -group control     -label pc              -radix decimal     /ProcessorTb/u_processor_dut/pc
 
-add wave -noupdate -expand -group Processor -expand -group instruction -label instruction     -radix hexadecimal /ProcessorTb/u_processor_dut/instruction
-add wave -noupdate -expand -group Processor -expand -group instruction -label operation                          /ProcessorTb/u_processor_dut/operation
-add wave -noupdate -expand -group Processor -expand -group instruction -label is_immediate                       /ProcessorTb/u_processor_dut/is_immediate
-add wave -noupdate -expand -group Processor -expand -group instruction -label rd              -radix unsigned    /ProcessorTb/u_processor_dut/rd
-add wave -noupdate -expand -group Processor -expand -group instruction -label rs_1            -radix unsigned    /ProcessorTb/u_processor_dut/rs_1
-add wave -noupdate -expand -group Processor -expand -group instruction -label rs_2            -radix unsigned    /ProcessorTb/u_processor_dut/rs_2
-add wave -noupdate -expand -group Processor -expand -group instruction -label immediate       -radix unsigned    /ProcessorTb/u_processor_dut/immediate
+add wave -noupdate -expand -group Processor -expand -group decode -label operation                          /ProcessorTb/u_processor_dut/operation
+add wave -noupdate -expand -group Processor -expand -group decode -label is_immediate                       /ProcessorTb/u_processor_dut/is_immediate
+add wave -noupdate -expand -group Processor -expand -group decode -label rd              -radix unsigned    /ProcessorTb/u_processor_dut/rd
+add wave -noupdate -expand -group Processor -expand -group decode -label rs_1            -radix unsigned    /ProcessorTb/u_processor_dut/rs_1
+add wave -noupdate -expand -group Processor -expand -group decode -label rs_2            -radix unsigned    /ProcessorTb/u_processor_dut/rs_2
+add wave -noupdate -expand -group Processor -expand -group decode -label immediate       -radix unsigned    /ProcessorTb/u_processor_dut/immediate
+
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {FETCH->DECODE}       -label instruction_reg -radix hexadecimal /ProcessorTb/u_processor_dut/instruction_reg
+
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {DECODE->EXECUTE}     -label opcode_reg                         /ProcessorTb/u_processor_dut/opcode_reg
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {DECODE->EXECUTE}     -label is_immediate_reg                   /ProcessorTb/u_processor_dut/is_immediate_reg
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {DECODE->EXECUTE}     -label rd_address_reg  -radix unsigned    /ProcessorTb/u_processor_dut/rd_address_reg
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {DECODE->EXECUTE}     -label rs1_value_reg   -radix hexadecimal /ProcessorTb/u_processor_dut/rs1_value_reg
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {DECODE->EXECUTE}     -label rs2_value_reg   -radix hexadecimal /ProcessorTb/u_processor_dut/rs2_value_reg
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {DECODE->EXECUTE}     -label immediate_reg   -radix unsigned    /ProcessorTb/u_processor_dut/immediate_reg
+
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {EXECUTE->WRITE_BACK} -label wb_address_reg  -radix unsigned    /ProcessorTb/u_processor_dut/wb_address_reg
 
 add wave -noupdate -expand -group Processor -expand -group spi         -label packet_in       -radix hexadecimal /ProcessorTb/u_processor_dut/packet_in
 add wave -noupdate -expand -group Processor -expand -group spi         -label counter_in      -radix decimal     /ProcessorTb/u_processor_dut/counter_in
@@ -42,7 +52,7 @@ add wave -noupdate -expand -group Processor -expand -group spi         -label al
 add wave -noupdate -expand -group Processor -expand -group spi         -label bas_active                         /ProcessorTb/u_processor_dut/bas_active
 add wave -noupdate -expand -group Processor -expand -group spi         -label bas_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/bas_packet_out
 add wave -noupdate -expand -group Processor -expand -group spi         -label bas_counter_out -radix decimal     /ProcessorTb/u_processor_dut/bas_counter_out
-add wave -noupdate -expand -group Processor -expand -group spi         -label mul_active                         /ProcessorTb/u_processor_dut/bas_active
+add wave -noupdate -expand -group Processor -expand -group spi         -label mul_active                         /ProcessorTb/u_processor_dut/mul_active
 add wave -noupdate -expand -group Processor -expand -group spi         -label mul_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/mul_packet_out
 add wave -noupdate -expand -group Processor -expand -group spi         -label mul_counter_out -radix decimal     /ProcessorTb/u_processor_dut/mul_counter_out
 

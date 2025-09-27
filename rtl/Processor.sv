@@ -8,10 +8,11 @@ import Isa::*;
  * TODO: 106 ciclos (1060ps / 5ps*2) = calculo qtd ciclos para realizar uma operação
  * TODO: finish doc
  *
- * TODO: barreiras temporais para instruções, e.g., inst_fetched, inst_decoded, inst_execute etc.
- *         - A primeira barreira temporal se refere apenas ao registro da instrução que será utilizada pelo DECODER;
- *
  * TODO: module regbank (?)
+ *
+ * TODO: ~reset ou !reset ??????
+ *
+ * TODO: else/default e setar os bgl em 0 quando não for usado, e.g. imm
  *
  * - i_clock:       System clock;
  * - i_reset:       Reset signal;
@@ -71,6 +72,9 @@ module Processor(
 	 */
 	logic [REGISTER_BANK_SIZE - 1 : 0] [REGISTER_SIZE - 1 : 0] registers;
 
+	/**
+	 * Program counter register, stores the address of the instruction being fetched
+	 */
 	logic [REGISTER_SIZE - 1 : 0] pc;
 
 	/*
@@ -113,11 +117,51 @@ module Processor(
 	 */
 	int mul_counter_out;
 
-	logic alu_active;
-	logic bas_active;
-	logic mul_active;
+	/**
+	 * Temporal barrier register to save the fetched instruction beetween `FETCH` and `DECODE`.
+	 */
+	logic [INSTRUCTION_SIZE - 1 : 0] instruction_reg;
 
-	logic [INSTRUCTION_SIZE - 1 : 0] instruction;
+	/**
+	 * Temporal barrier register to save the operation code beetween `DECODE` and `EXECUTE`.
+	 */
+	Operation opcode_reg;
+
+	/**
+	 * Temporal barrier register to save the immediate flag of the instruction format beetween `DECODE` and `EXECUTE`.
+	 */
+	logic is_immediate_reg;
+
+	/**
+	 * Temporal barrier register to save the destination register address beetween `DECODE` and `EXECUTE`.
+	 */
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd_address_reg;
+
+	/**
+	 * Temporal barrier register to save the first operand beetween `DECODE` and `EXECUTE`.
+	 */
+	logic [REGISTER_SIZE - 1 : 0] rs1_value_reg;
+
+	/**
+	 * Temporal barrier register to save the second operand beetween `DECODE` and `EXECUTE`.
+	 */
+	logic [REGISTER_SIZE - 1 : 0] rs2_value_reg;
+
+	/**
+	 * Temporal barrier register to save the immediate value beetween `DECODE` and `EXECUTE`.
+	 */
+	logic [MEMORY_ADDRESS_WIDTH - 1 : 0] immediate_reg;
+
+	/**
+	 * Temporal barrier register to save the operation result between `EXECUTE` and `WRITE_BACK`.
+	 */
+	logic [REGISTER_SIZE - 1 : 0] result_reg; // TODO quebrar FSM em 2, 1 apenas para SPI e que roda dentrod o EXECUTE; armazenar resultado neste reg e add na forma de onda
+
+	/**
+	 * Temporal barrier register to save the destination register address between `EXECUTE` and `WRITE_BACK`.
+	 */
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] wb_address_reg;
+
 	Operation operation;
 	logic is_immediate;
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
@@ -125,18 +169,22 @@ module Processor(
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
 	logic [MEMORY_ADDRESS_WIDTH - 1 : 0] immediate;
 
+	logic alu_active;
+	logic bas_active;
+	logic mul_active;
+
 	assign write_ram.enable = 1;
-	assign write_ram.write_data = registers[rd];
-	assign write_ram.write_enable = (current_state == EXECUTE) && (operation == SW);
-	assign write_ram.address = (operation inside { LW, SW } && current_state == EXECUTE) ? immediate : pc;
+	assign write_ram.write_data = registers[wb_address_reg];
+	assign write_ram.write_enable = (current_state == WRITE_BACK) && (opcode_reg == SW);
+	assign write_ram.address = (opcode_reg == LW && current_state == EXECUTE)    ? immediate_reg // LW: precisa apresentar antes
+		                       : (opcode_reg == SW && current_state == WRITE_BACK) ? immediate_reg // SW: escreve no WB
+		                       : pc; // FETCH: endereço da instrução
 
 	assign u_spi.sclk = i_clock;
 
-	assign instruction = ~i_reset ? 'b0 : read_ram.read_data;
-
-	assign alu_active = operation inside { ADD, AND, OR };
-	assign bas_active = operation inside { SHL, SHR };
-	assign mul_active = operation == MUL;
+	assign alu_active = opcode_reg inside { ADD, AND, OR };
+	assign bas_active = opcode_reg inside { SHL, SHR };
+	assign mul_active = opcode_reg == MUL;
 
 	// `nss` should be 0 only when transmitting/receiving
 	always_comb
@@ -156,12 +204,13 @@ module Processor(
 			default: u_spi.mosi = 1'b0;
 	endcase
 
+	// State logic
 	always_comb
 		if (~i_reset) next_state = FETCH;
 		else case (current_state)
-			FETCH:      next_state = (instruction != 'b0) ? DECODE : FETCH;
+			FETCH:      next_state = (instruction_reg != 'b0) ? DECODE : FETCH;
 			DECODE:     next_state = EXECUTE;
-			EXECUTE:    next_state = is_immediate ? WRITE_BACK : SEND;
+			EXECUTE:    next_state = is_immediate_reg ? WRITE_BACK : SEND;
 			SEND:       next_state = (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
 			SENDING:    if (alu_active)      next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
 				          else if (mul_active) next_state = (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
@@ -172,19 +221,41 @@ module Processor(
 			default:    next_state = FETCH;
 		endcase
 
+	// DECODE logic
+	always_comb
+		if (~i_reset) { operation, is_immediate, rd, rs_1, rs_2, immediate } = '0;
+		else if (instruction_reg[12]) { operation, is_immediate, rd, immediate } = instruction_reg;
+		else { operation, is_immediate, rd, rs_1, rs_2 } = instruction_reg;
+
 	// PC increment
 	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) pc <= 'b0;
-		else if (current_state == FETCH && instruction != 'b0) pc <= pc + 1;
+		if (~i_reset) pc <= '0;
+		else if (current_state == FETCH && instruction_reg != '0) pc <= pc + 1;
+
+	// FETCH -> DECODE barrier
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (~i_reset) instruction_reg <= '0;
+		else if (current_state == FETCH) instruction_reg <= read_ram.read_data;
+
+	// DECODE -> EXECUTE barrier
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (~i_reset) { opcode_reg , is_immediate_reg, rd_address_reg, rs1_value_reg, rs2_value_reg, immediate_reg } <= '0;
+		 else if (current_state == DECODE) begin
+			opcode_reg <= operation;
+			is_immediate_reg <= is_immediate;
+			rd_address_reg <= rd;
+			rs1_value_reg <= registers[rs_1];
+			rs2_value_reg <= registers[rs_2];
+			immediate_reg <= immediate;
+		end
+
+	// EXECUTE -> WRITE_BACK barrier
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (~i_reset) wb_address_reg <= '0;
+		else if (current_state == EXECUTE) wb_address_reg <= rd_address_reg;
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
 		if (~i_reset) begin
-			operation       <= Operation'('0);
-			is_immediate    <= '0;
-			rs_1            <= '0;
-			rs_2            <= '0;
-			rd              <= '0;
-			immediate       <= '0;
 			packet_in       <= '0;
 			counter_in      <= '0;
 			alu_packet_out  <= '0;
@@ -195,12 +266,9 @@ module Processor(
 			mul_counter_out <= '0;
 		end
 		else case (current_state)
-			DECODE:     if (instruction[12]) { operation, is_immediate, rd, immediate } <= instruction;
-			            else { operation, is_immediate, rd, rs_1, rs_2 } <= instruction;
-
-			SEND:       if (alu_active)      alu_packet_out <= { registers[rs_2], registers[rs_1], operation };
-				          else if (mul_active) mul_packet_out <= { registers[rs_2], registers[rs_1] };
-				          else if (bas_active) bas_packet_out <= { registers[rs_2], registers[rs_1], operation };
+			SEND:       if (alu_active)      alu_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
+				          else if (mul_active) mul_packet_out <= { rs2_value_reg, rs1_value_reg };
+				          else if (bas_active) bas_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
 
 			SENDING:    if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
 				          else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
@@ -211,8 +279,7 @@ module Processor(
 				counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
 			end
 
-			WRITE_BACK: if (operation == LW) registers[rd] <= read_ram.read_data;
-				          else if (!is_immediate) registers[rd] <= packet_in;
+			WRITE_BACK: registers[wb_address_reg] <= (opcode_reg == LW) ? read_ram.read_data : packet_in;
 		endcase
 
 		current_state <= next_state;
