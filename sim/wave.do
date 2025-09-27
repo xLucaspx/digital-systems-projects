@@ -43,9 +43,10 @@ add wave -noupdate -expand -group Processor -expand -group barriers -expand -gro
 add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {DECODE->EXECUTE}     -label immediate_reg   -radix unsigned    /ProcessorTb/u_processor_dut/immediate_reg
 
 add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {EXECUTE->WRITE_BACK} -label wb_address_reg  -radix unsigned    /ProcessorTb/u_processor_dut/wb_address_reg
+add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {EXECUTE->WRITE_BACK} -label result_reg      -radix unsigned    /ProcessorTb/u_processor_dut/result_reg
 
 add wave -noupdate -expand -group Processor -expand -group spi         -label spi_state                          /ProcessorTb/u_processor_dut/spi_state
-add wave -noupdate -expand -group Processor -expand -group spi         -label spi_start                          /ProcessorTb/u_processor_dut/spi_start
+add wave -noupdate -expand -group Processor -expand -group spi         -label spi_active                         /ProcessorTb/u_processor_dut/spi_active
 add wave -noupdate -expand -group Processor -expand -group spi         -label spi_done                           /ProcessorTb/u_processor_dut/spi_done
 add wave -noupdate -expand -group Processor -expand -group spi         -label packet_in       -radix hexadecimal /ProcessorTb/u_processor_dut/packet_in
 add wave -noupdate -expand -group Processor -expand -group spi         -label counter_in      -radix decimal     /ProcessorTb/u_processor_dut/counter_in

@@ -163,14 +163,13 @@ module Processor(
 	/**
 	 * Temporal barrier register to save the operation result between `EXECUTE` and `WRITE_BACK`.
 	 */
-	logic [REGISTER_SIZE - 1 : 0] result_reg; // TODO quebrar FSM em 2, 1 apenas para SPI e que roda dentrod o EXECUTE; armazenar resultado neste reg e add na forma de onda
+	logic [REGISTER_SIZE - 1 : 0] result_reg;
 
 	/**
 	 * Temporal barrier register to save the destination register address between `EXECUTE` and `WRITE_BACK`.
 	 */
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] wb_address_reg;
 
-	logic [INSTRUCTION_SIZE - 1 : 0] instruction;
 	Operation operation;
 	logic is_immediate;
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
@@ -182,7 +181,7 @@ module Processor(
 	logic bas_active;
 	logic mul_active;
 
-	logic spi_start;
+	logic spi_active;
 	logic spi_done;
 
 	assign u_spi.sclk = i_clock;
@@ -218,16 +217,16 @@ module Processor(
 	always_comb
 		if (~i_reset) begin
 			next_state = FETCH;
-			spi_start = 0;
+			spi_active = 0;
 		end else case (current_state)
 			FETCH:      next_state = DECODE;
 			DECODE:     next_state = instruction_reg == '0 ? HALT : EXECUTE;
 			EXECUTE:    begin
 				if (is_immediate_reg || spi_done) begin
-					spi_start = 0;
+					spi_active = 0;
 					next_state = WRITE_BACK;
 				end else begin
-					spi_start = 1;
+					spi_active = 1;
 					next_state = EXECUTE;
 				end
 			end
@@ -243,7 +242,7 @@ module Processor(
 			spi_done <= 0;
 		end else case (spi_state)
 			IDLE:      begin
-				spi_state <= spi_start ? SEND : IDLE;
+				spi_state <= spi_active ? SEND : IDLE;
 				spi_done <= 0;
 			end
 			SEND:      spi_state <= (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
@@ -288,8 +287,14 @@ module Processor(
 
 	// EXECUTE -> WRITE_BACK barrier
 	always_ff @(posedge i_clock, negedge i_reset)
-		if (~i_reset) wb_address_reg <= '0;
-		else if (current_state == EXECUTE) wb_address_reg <= rd_address_reg;
+		if (~i_reset) begin
+			wb_address_reg <= '0;
+			result_reg <= '0;
+		end
+		else if (current_state == EXECUTE) begin
+			wb_address_reg <= rd_address_reg;
+			if (spi_done) result_reg <= packet_in;
+		end
 
 	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
 		if (~i_reset) begin
@@ -320,7 +325,7 @@ module Processor(
 			endcase
 
 			WRITE_BACK: if (opcode_reg == LW) registers[wb_address_reg] <= read_ram.read_data;
-				          else if (opcode_reg inside { ADD, AND, OR, MUL, SHL, SHR }) registers[wb_address_reg] <= packet_in;
+				          else if (opcode_reg inside { ADD, AND, OR, MUL, SHL, SHR }) registers[wb_address_reg] <= result_reg;
 		endcase
 
 		current_state <= next_state;
