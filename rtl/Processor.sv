@@ -53,19 +53,27 @@ module Processor(
 		.spi(u_spi)
 	);
 
-	typedef enum logic [7:0] {
-		FETCH      = 'b0000_0001,
-		DECODE     = 'b0000_0010,
-		EXECUTE    = 'b0000_0100,
-		SEND       = 'b0000_1000,
-		SENDING    = 'b0001_0000,
-		RECEIVE    = 'b0010_0000,
-		RECEIVING  = 'b0100_0000,
-		WRITE_BACK = 'b1000_0000
+	typedef enum logic [3:0] {
+		FETCH      = 'b0001,
+		DECODE     = 'b0010,
+		EXECUTE    = 'b0100,
+		WRITE_BACK = 'b1000,
+		HALT       = 'b0000
 	} state_t;
+
+	typedef enum logic [5:0] {
+		IDLE      = 'b00_0001,
+		SEND      = 'b00_0010,
+		SENDING   = 'b00_0100,
+		RECEIVE   = 'b00_1000,
+		RECEIVING = 'b01_0000,
+		DONE      = 'b10_0000
+	} spi_state_t;
 
 	state_t current_state;
 	state_t next_state;
+
+	spi_state_t spi_state;
 
 	/**
 	 * Register bank. There are REGISTER_BANK_SIZE positions, each with REGISTER_SIZE bits.
@@ -162,6 +170,7 @@ module Processor(
 	 */
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] wb_address_reg;
 
+	logic [INSTRUCTION_SIZE - 1 : 0] instruction;
 	Operation operation;
 	logic is_immediate;
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
@@ -173,14 +182,15 @@ module Processor(
 	logic bas_active;
 	logic mul_active;
 
-	assign write_ram.enable = 1;
-	assign write_ram.write_data = registers[wb_address_reg];
-	assign write_ram.write_enable = (current_state == WRITE_BACK) && (opcode_reg == SW);
-	assign write_ram.address = (opcode_reg == LW && current_state == EXECUTE)    ? immediate_reg // LW: precisa apresentar antes
-		                       : (opcode_reg == SW && current_state == WRITE_BACK) ? immediate_reg // SW: escreve no WB
-		                       : pc; // FETCH: endereço da instrução
+	logic spi_start;
+	logic spi_done;
 
 	assign u_spi.sclk = i_clock;
+
+	assign write_ram.enable = 1;
+	assign write_ram.write_data = registers[rd_address_reg];
+	assign write_ram.write_enable = (current_state == EXECUTE) && (opcode_reg == SW);
+	assign write_ram.address = (current_state == EXECUTE && opcode_reg inside { LW, SW }) ? immediate_reg : pc;
 
 	assign alu_active = opcode_reg inside { ADD, AND, OR };
 	assign bas_active = opcode_reg inside { SHL, SHR };
@@ -188,7 +198,7 @@ module Processor(
 
 	// `nss` should be 0 only when transmitting/receiving
 	always_comb
-		if (current_state inside { SEND, SENDING, RECEIVE, RECEIVING }) begin
+		if (spi_state inside { SEND, SENDING, RECEIVE, RECEIVING }) begin
 			u_spi.nss[ALU_NSS_POSITION] = ~alu_active;
 			u_spi.nss[BAS_NSS_POSITION] = ~bas_active;
 			u_spi.nss[MUL_NSS_POSITION] = ~mul_active;
@@ -196,7 +206,7 @@ module Processor(
 		else u_spi.nss = '1;
 
 	// MOSI
-	always_comb case (current_state)
+	always_comb case (spi_state)
 			SEND:    u_spi.mosi = 1'b1;
 			SENDING: if (alu_active)      u_spi.mosi = alu_packet_out[alu_counter_out];
 				       else if (mul_active) u_spi.mosi = mul_packet_out[mul_counter_out];
@@ -204,21 +214,48 @@ module Processor(
 			default: u_spi.mosi = 1'b0;
 	endcase
 
-	// State logic
+	// Processor state logic
 	always_comb
-		if (~i_reset) next_state = FETCH;
-		else case (current_state)
-			FETCH:      next_state = (instruction_reg != 'b0) ? DECODE : FETCH;
-			DECODE:     next_state = EXECUTE;
-			EXECUTE:    next_state = is_immediate_reg ? WRITE_BACK : SEND;
-			SEND:       next_state = (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
-			SENDING:    if (alu_active)      next_state = (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
-				          else if (mul_active) next_state = (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
-				          else if (bas_active) next_state = (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
-			RECEIVE:    next_state = (u_spi.miso && ~u_spi.mosi) ? RECEIVING : RECEIVE;
-			RECEIVING:  next_state = (counter_in == $bits(packet_in) - 1) ? WRITE_BACK : current_state;
+		if (~i_reset) begin
+			next_state = FETCH;
+			spi_start = 0;
+		end else case (current_state)
+			FETCH:      next_state = DECODE;
+			DECODE:     next_state = instruction_reg == '0 ? HALT : EXECUTE;
+			EXECUTE:    begin
+				if (is_immediate_reg || spi_done) begin
+					spi_start = 0;
+					next_state = WRITE_BACK;
+				end else begin
+					spi_start = 1;
+					next_state = EXECUTE;
+				end
+			end
 			WRITE_BACK: next_state = FETCH;
+			HALT:       next_state = HALT;
 			default:    next_state = FETCH;
+		endcase
+
+	// SPI state logic
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (~i_reset) begin
+			spi_state <= IDLE;
+			spi_done <= 0;
+		end else case (spi_state)
+			IDLE:      begin
+				spi_state <= spi_start ? SEND : IDLE;
+				spi_done <= 0;
+			end
+			SEND:      spi_state <= (~u_spi.miso && u_spi.mosi) ? SENDING : SEND;
+			SENDING:   if (alu_active)      spi_state <= (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
+				         else if (mul_active) spi_state <= (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
+				         else if (bas_active) spi_state <= (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
+			RECEIVE:   spi_state <= (u_spi.miso && ~u_spi.mosi) ? RECEIVING : RECEIVE;
+			RECEIVING: spi_state <= (counter_in == $bits(packet_in) - 1) ? DONE : RECEIVING;
+			DONE:      begin
+				spi_state <= IDLE;
+				spi_done <= 1;
+			end
 		endcase
 
 	// DECODE logic
@@ -230,7 +267,7 @@ module Processor(
 	// PC increment
 	always_ff @(posedge i_clock, negedge i_reset)
 		if (~i_reset) pc <= '0;
-		else if (current_state == FETCH && instruction_reg != '0) pc <= pc + 1;
+		else if (current_state == FETCH) pc <= pc + 1;
 
 	// FETCH -> DECODE barrier
 	always_ff @(posedge i_clock, negedge i_reset)
@@ -266,20 +303,24 @@ module Processor(
 			mul_counter_out <= '0;
 		end
 		else case (current_state)
-			SEND:       if (alu_active)      alu_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
-				          else if (mul_active) mul_packet_out <= { rs2_value_reg, rs1_value_reg };
-				          else if (bas_active) bas_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
+		
+			EXECUTE: case (spi_state)
+				SEND:       if (alu_active)      alu_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
+										else if (mul_active) mul_packet_out <= { rs2_value_reg, rs1_value_reg };
+										else if (bas_active) bas_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
 
-			SENDING:    if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
-				          else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
-				          else if (bas_active) bas_counter_out <= (bas_counter_out == $bits(bas_packet_out) - 1) ? 0 : bas_counter_out + 1;
+				SENDING:    if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
+										else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
+										else if (bas_active) bas_counter_out <= (bas_counter_out == $bits(bas_packet_out) - 1) ? 0 : bas_counter_out + 1;
 
-			RECEIVING:  begin
-				packet_in[counter_in] <= u_spi.miso;
-				counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
-			end
+				RECEIVING:  begin
+					packet_in[counter_in] <= u_spi.miso;
+					counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
+				end
+			endcase
 
-			WRITE_BACK: registers[wb_address_reg] <= (opcode_reg == LW) ? read_ram.read_data : packet_in;
+			WRITE_BACK: if (opcode_reg == LW) registers[wb_address_reg] <= read_ram.read_data;
+				          else if (opcode_reg inside { ADD, AND, OR, MUL, SHL, SHR }) registers[wb_address_reg] <= packet_in;
 		endcase
 
 		current_state <= next_state;

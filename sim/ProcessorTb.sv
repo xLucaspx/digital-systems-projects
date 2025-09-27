@@ -34,40 +34,41 @@ initial foreach (u_processor_dut.registers[i]) u_processor_dut.registers[i] = $u
 // Load memory with instructions and data
 initial begin
 	u_ram.memory = '{
-		0 : { Isa::LW,  1'b1, 4'd0,  8'd100       }, // r0 = 0;
-		1 : { Isa::LW,  1'b1, 4'd1,  8'd101       }, // r1 = 1;
+		0 : { Isa::LW,  1'b1, 4'd1,  8'd101       }, // r1 = 1;
+		1 : { Isa::LW,  1'b1, 4'd0,  8'd100       }, // r0 = 0;
 		2 : { Isa::ADD, 1'b0, 4'd2,  4'd1,  4'd1  }, // r2 = r1 + r1;
-		3 : { Isa::MUL, 1'b0, 4'd3,  4'd2,  4'd2  }, // r3 = r2 * r2;
-		4 : { Isa::SHL, 1'b0, 4'd4,  4'd3,  4'd1  }, // r3 = r3 ROL 1;
+		3 : { Isa::SW,  1'b1, 4'd2,  8'd255       }, // m[255] = r2;
+		4 : { Isa::MUL, 1'b0, 4'd3,  4'd2,  4'd2  }, // r3 = r2 * r2;
+		5 : { Isa::SHL, 1'b0, 4'd4,  4'd3,  4'd1  }, // r3 = r3 ROL 1;
 
-		5 : { Isa::MUL, 1'b0, 4'd14, 4'd14, 4'd14 },
 		6 : { Isa::AND, 1'b0, 4'd15, 4'd15, 4'd15 },
-		7 : { Isa::ADD, 1'b0, 4'd13, 4'd13, 4'd13 },
-		8 : { Isa::OR,  1'b0, 4'd12, 4'd12, 4'd12 },
-		9 : { Isa::SHL, 1'b0, 4'd11, 4'd11, 4'd11 },
-		10: { Isa::SHR, 1'b0, 4'd10, 4'd10, 4'd10 },
+		7 : { Isa::MUL, 1'b0, 4'd14, 4'd14, 4'd14 },
+		8 : { Isa::ADD, 1'b0, 4'd13, 4'd13, 4'd13 },
+		9 : { Isa::OR,  1'b0, 4'd12, 4'd12, 4'd12 },
+		10: { Isa::SHL, 1'b0, 4'd11, 4'd11, 4'd11 },
+		11: { Isa::SHR, 1'b0, 4'd10, 4'd10, 4'd10 },
 
-		11: { Isa::OR,  1'b0, 4'd9, 4'd10, 4'd11  },
-		12: { Isa::SHR, 1'b0, 4'd9, 4'd10, 4'd11  },
-		13: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd11  },
-		14: { Isa::MUL, 1'b0, 4'd9, 4'd10, 4'd11  },
-		15: { Isa::SHL, 1'b0, 4'd9, 4'd10, 4'd11  },
-		16: { Isa::AND, 1'b0, 4'd9, 4'd10, 4'd11  },
+		12: { Isa::OR,  1'b0, 4'd9, 4'd10, 4'd11  },
+		13: { Isa::SHR, 1'b0, 4'd9, 4'd10, 4'd11  },
+		14: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd11  },
+		15: { Isa::MUL, 1'b0, 4'd9, 4'd10, 4'd11  },
+		16: { Isa::SHL, 1'b0, 4'd9, 4'd10, 4'd11  },
+		17: { Isa::AND, 1'b0, 4'd9, 4'd10, 4'd11  },
 
-		17: { Isa::AND, 1'b0, 4'd12, 4'd13, 4'd14 },
-		18: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd12  },
-		19: { Isa::OR,  1'b0, 4'd6,  4'd7,  4'd8  },
-		20: { Isa::MUL, 1'b0, 4'd3,  4'd4,  4'd5  },
+		18: { Isa::AND, 1'b0, 4'd12, 4'd13, 4'd14 },
+		19: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd12  },
+		20: { Isa::OR,  1'b0, 4'd6,  4'd7,  4'd8  },
+		21: { Isa::MUL, 1'b0, 4'd3,  4'd4,  4'd5  },
 
-		21: { Isa::OR,  1'b0, 4'd2, 4'd9, 4'd12   },
-		22: { Isa::AND, 1'b0, 4'd1,  4'd3, 4'd4   },
-		23: { Isa::ADD, 1'b0, 4'd0,  4'd3, 4'd9   },
-		24: { Isa::SW,  1'b1, 4'd10, 8'd255       },
+		22: { Isa::OR,  1'b0, 4'd2, 4'd9, 4'd12   },
+		23: { Isa::AND, 1'b0, 4'd1,  4'd3, 4'd4   },
+		24: { Isa::ADD, 1'b0, 4'd0,  4'd3, 4'd9   },
+		25: { Isa::SW,  1'b1, 4'd10, 8'd255       },
 
-		25: 'b0, // halt
+		26: 'b0, // halt
 
 		// data
-		100: 'b0,
+		100: 1'b0,
 		101: 1'b1,
 
 		default: $urandom
@@ -125,10 +126,10 @@ initial begin
 			endcase
 		end
 
-			// wait until the processor exits the WRITE_BACK state
-			@(negedge clock iff (u_processor_dut.current_state == u_processor_dut.WRITE_BACK));
-			// then wait until the next clock edge to check the result
-			@(negedge clock);
+			// espera o WRITE_BACK terminar
+			@(negedge clock iff (u_processor_dut.current_state == u_processor_dut.FETCH));
+			// agora espera mais 1 ciclo para garantir que os valores foram escritos
+			// @(ne clock);
 
 			if (operation == Isa::SW) actual = u_ram.memory[immediate];
 			else actual = u_processor_dut.registers[rd];
