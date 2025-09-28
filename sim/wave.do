@@ -109,15 +109,15 @@ add wave -noupdate -expand -group Memory -label RAM     -radix hexadecimal /Proc
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors \
-	{{Cursor 1 } {50000   ps} 1} \
-	{{Cursor 2 } {90000   ps} 1} \
-	{{Cursor 3 } {1160000 ps} 1} \
-	{{Cursor 4 } {1200000 ps} 1} \
-	{{Cursor 5 } {2240000 ps} 1} \
-	{{Cursor 6 } {3040000 ps} 1} \
-	{{Cursor 7 } {4110000 ps} 1} \
-	{{Cursor 8 } {5150000 ps} 1} \
-	{{Cursor 9 } {6220000 ps} 1} \
+	{{Cursor 1 } {18000   ps} 1} \
+	{{Cursor 2 } {26000   ps} 1} \
+	{{Cursor 3 } {240000  ps} 1} \
+	{{Cursor 4 } {248000  ps} 1} \
+	{{Cursor 5 } {456000  ps} 1} \
+	{{Cursor 6 } {616000  ps} 1} \
+	{{Cursor 7 } {830000  ps} 1} \
+	{{Cursor 8 } {1038000 ps} 1} \
+	{{Cursor 9 } {1252000 ps} 1} \
 	{{Cursor 10} {0       ps} 0}
 quietly wave cursor active 9
 
@@ -148,4 +148,4 @@ configure wave -vectorcolor "Medium Slate Blue"
 configure wave -wavebackground "White"
 
 update
-WaveRestoreZoom {0 ns} {25000 ns}
+WaveRestoreZoom {0 ns} {6300 ns}

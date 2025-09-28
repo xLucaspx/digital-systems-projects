@@ -214,7 +214,8 @@ module Processor(
 	assign write_ram.enable = current_state != HALT;
 
 	/**
-	 * Writing is enabled during `EXECUTE` for the `SW` operation.
+	 * Writing is enabled during `EXECUTE` for the `SW` operation. The actual writing will be done in `WRITE_BACK` due to
+	 * memory delay.
 	 */
 	assign write_ram.write_enable = (current_state == EXECUTE) && (opcode_reg == SW);
 
@@ -265,7 +266,7 @@ module Processor(
 	endcase
 
 	/**
-	 * Processor FSM state definition logic.
+	 * Processor FSM state definition logic. If the current instruction is `'0`, halts.
 	 */
 	always_comb
 		if (!i_reset) next_state = FETCH;
