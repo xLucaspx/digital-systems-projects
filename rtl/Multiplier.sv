@@ -7,9 +7,13 @@ import Isa::*;
  * multiplier acting as a slave. Should receive an `MulPacket` from the processor and return the `REGISTER_SIZE` result
  * of the operation.
  *
- * - i_clock: System clock;
- * - i_reset: Reset signal;
- * - spi:     SlaveSpi interface for communication with the processor.
+ * [Parameters]
+ * - NssPosition: The position of this slave's signal in the SPI's `nss`.
+ *
+ * [Wires]
+ * - i_clock: System clock.
+ * - i_reset: Reset signal.
+ * - spi:     SlaveSpi interface for communicating with the processor.
  */
 module Multiplier#(parameter int NssPosition = 0)(
 	input var logic i_clock,
@@ -53,7 +57,9 @@ module Multiplier#(parameter int NssPosition = 0)(
 			default:   next_state = RECEIVE;
 		endcase
 
-	always_ff @(posedge i_clock, negedge i_reset) begin: state_machine
+	always_ff @(posedge i_clock, negedge i_reset) current_state <= next_state;
+
+	always_ff @(posedge i_clock, negedge i_reset)
 		if (!i_reset) begin
 			counter_in  <= 0;
 			counter_out <= 0;
@@ -68,8 +74,5 @@ module Multiplier#(parameter int NssPosition = 0)(
 			OPERATE: packet_out <= op_1 * op_2;
 			SENDING: counter_out <= (counter_out == $bits(packet_out) - 1) ? 0 : counter_out + 1;
 		endcase
-
-		current_state <= next_state;
-	end: state_machine
 
 endmodule: Multiplier

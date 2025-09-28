@@ -1,8 +1,19 @@
 `default_nettype none
 
+/**
+ * Single port Random Access Memory (RAM).
+ *
+ * [Parameters]
+ * - DataWidth:    Defines the size of each memory position.
+ * - Depth:        Defines the memory size, i.e., the amount of available memory positions.
+ *
+ * [Wires]
+ * - i_clock:  System clock.
+ * - ram_port: RamPort Memory interface to interact with the CPU.
+ */
 module SinglePortRam#(
 	parameter int DataWidth = Isa::MEMORY_DATA_WIDTH,
-	parameter int Depth = Isa::MEMORY_DEPTH
+	parameter int Depth     = Isa::MEMORY_DEPTH
 )(
 	input var logic i_clock,
 

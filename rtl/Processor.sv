@@ -5,15 +5,11 @@ import Isa::*;
 /**
  * Mini serial processor. Communicates with the other blocks (ALU, multiplier etc.) through an SPI.
  *
- * TODO: finish doc
- *
- * TODO: module regbank (?)
- *
- * TODO: else/default e setar os bgl em 0 quando não for usado, e.g. imm
- *
- * - i_clock:       System clock;
- * - i_reset:       Reset signal;
- * TODO: interface memory
+ * [Wires]
+ * - i_clock:   System clock.
+ * - i_reset:   Reset signal.
+ * - write_ram: RamPort CPU interface to write in the memory.
+ * - read_ram:  RamPort Memory interface to read from the memory.
  */
 module Processor(
 	input var logic i_clock,
@@ -50,6 +46,9 @@ module Processor(
 		.spi(u_spi)
 	);
 
+	/**
+	 * States to control the processor's FSM.
+	 */
 	typedef enum logic [3:0] {
 		FETCH      = 'b0001,
 		DECODE     = 'b0010,
@@ -58,6 +57,9 @@ module Processor(
 		HALT       = 'b0000
 	} state_t;
 
+	/**
+	 * States to control the SPI FSM inside the `EXECUTE` block.
+	 */
 	typedef enum logic [5:0] {
 		IDLE      = 'b00_0001,
 		SEND      = 'b00_0010,
@@ -78,7 +80,7 @@ module Processor(
 	logic [REGISTER_BANK_SIZE - 1 : 0] [REGISTER_SIZE - 1 : 0] registers;
 
 	/**
-	 * Program counter register, stores the address of the instruction being fetched
+	 * Program counter register, stores the address of the instruction being fetched.
 	 */
 	logic [REGISTER_SIZE - 1 : 0] pc;
 
@@ -88,7 +90,7 @@ module Processor(
 	logic [REGISTER_SIZE - 1 : 0] packet_in;
 
 	/**
-	 * Counter to keep track of packet_in bits received from the ALU.
+	 * Counter to keep track of `packet_in` bits received from the SPI.
 	 */
 	int counter_in;
 
@@ -98,7 +100,7 @@ module Processor(
 	AluPacket alu_packet_out;
 
 	/**
-	 * Counter to keep track of alu_packet_out bits sent to the ALU.
+	 * Counter to keep track of `alu_packet_out` bits sent to the ALU.
 	 */
 	int alu_counter_out;
 
@@ -108,7 +110,7 @@ module Processor(
 	ShifterPacket bas_packet_out;
 
 	/**
-	 * Counter to keep track of mul_packet_out bits sent to the barrel shifter.
+	 * Counter to keep track of `mul_packet_out` bits sent to the barrel shifter.
 	 */
 	int bas_counter_out;
 
@@ -118,7 +120,7 @@ module Processor(
 	MulPacket mul_packet_out;
 
 	/**
-	 * Counter to keep track of mul_packet_out bits sent to the multiplier.
+	 * Counter to keep track of `mul_packet_out` bits sent to the multiplier.
 	 */
 	int mul_counter_out;
 
@@ -167,11 +169,34 @@ module Processor(
 	 */
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] wb_address_reg;
 
+	/**
+	 * Operation decoded from the current instruction.
+	 */
 	Operation operation;
+
+	/**
+	 * Immediate flag decoded from the current instruction.
+	 */
 	logic is_immediate;
+
+	/**
+	 * Destination register address decoded from the current instruction.
+	 */
 	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rd;
-	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_1;
-	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs_2;
+
+	/**
+	 * Source register 1 address decoded from the current instruction.
+	 */
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs1;
+
+	/**
+	 * Source register 2 address decoded from the current instruction.
+	 */
+	logic [$clog2(REGISTER_BANK_SIZE) - 1 : 0] rs2;
+
+	/**
+	 * Immediate value decoded from the current instruction.
+	 */
 	logic [MEMORY_ADDRESS_WIDTH - 1 : 0] immediate;
 
 	logic alu_active;
@@ -183,118 +208,96 @@ module Processor(
 
 	assign u_spi.sclk = i_clock;
 
-	assign write_ram.enable = 1;
-	assign write_ram.write_data = registers[rd_address_reg];
+	/**
+	 * The RAM is enabled while the processor is working.
+	 */
+	assign write_ram.enable = current_state != HALT;
+
+	/**
+	 * Writing is enabled during `EXECUTE` for the `SW` operation.
+	 */
 	assign write_ram.write_enable = (current_state == EXECUTE) && (opcode_reg == SW);
+
+	/**
+	 * When enabled, writes the value of `rd` to the specified address.
+	 */
+	assign write_ram.write_data = registers[rd_address_reg];
+
+	/**
+	 * RAM address. During `EXECUTE` for `LW` and `SW`, it's the decoded address (immediate) of the current instruction;
+	 * at other times it's the program counter, i.e., the address of the next instruction.
+	 */
 	assign write_ram.address = (current_state == EXECUTE && opcode_reg inside { LW, SW }) ? immediate_reg : pc;
+
+	/**
+	 * SPI is enabled during `EXECUTE` if the instruction is not immediate, or while it's not done communicating.
+	 */
+	assign spi_active = (current_state == EXECUTE) && !(is_immediate_reg || spi_done);
+	assign spi_done   = spi_state == DONE;
 
 	assign alu_active = opcode_reg inside { ADD, AND, OR };
 	assign bas_active = opcode_reg inside { SHL, SHR };
 	assign mul_active = opcode_reg == MUL;
 
-	// `nss` should be 0 only when transmitting/receiving
+	/*
+	* If the SPI is active, sets `nss` to `0` at the active slave designated position. At maximum one slave must be active
+	* at a time, and `nss` should only be set when transmitting/receiving.
+	*/
 	always_comb
-		if (spi_state inside { SEND, SENDING, RECEIVE, RECEIVING }) begin
+		if (spi_active) begin
 			u_spi.nss[ALU_NSS_POSITION] = !alu_active;
 			u_spi.nss[BAS_NSS_POSITION] = !bas_active;
 			u_spi.nss[MUL_NSS_POSITION] = !mul_active;
 		end
 		else u_spi.nss = '1;
 
-	// MOSI
+	/**
+	 * Defines the SPI's MOSI signal. When it wants to transmit, it sends `1` to the selected slave and expects the
+	 * response to be `0`; during transmission the MOSI is the respective data and when it is available to receive it's
+	 * set to `0`.
+	 */
 	always_comb case (spi_state)
-			SEND:    u_spi.mosi = 1'b1;
-			SENDING: if (alu_active)      u_spi.mosi = alu_packet_out[alu_counter_out];
-				       else if (mul_active) u_spi.mosi = mul_packet_out[mul_counter_out];
-				       else if (bas_active) u_spi.mosi = bas_packet_out[bas_counter_out];
-			default: u_spi.mosi = 1'b0;
+		SEND:    u_spi.mosi = 1'b1;
+		SENDING: if (alu_active)      u_spi.mosi = alu_packet_out[alu_counter_out];
+			       else if (mul_active) u_spi.mosi = mul_packet_out[mul_counter_out];
+			       else if (bas_active) u_spi.mosi = bas_packet_out[bas_counter_out];
+		default: u_spi.mosi = 1'b0;
 	endcase
 
-	// Processor state logic
+	/**
+	 * Processor FSM state definition logic.
+	 */
 	always_comb
-		if (!i_reset) begin
-			next_state = FETCH;
-			spi_active = 0;
-		end else case (current_state)
+		if (!i_reset) next_state = FETCH;
+		else case (current_state)
 			FETCH:      next_state = DECODE;
+
 			DECODE:     next_state = instruction_reg == '0 ? HALT : EXECUTE;
-			EXECUTE:    begin
-				if (is_immediate_reg || spi_done) begin
-					spi_active = 0;
-					next_state = WRITE_BACK;
-				end else begin
-					spi_active = 1;
-					next_state = EXECUTE;
-				end
-			end
+
+			EXECUTE:    next_state = (is_immediate_reg || spi_done) ? WRITE_BACK : EXECUTE;
+
 			WRITE_BACK: next_state = FETCH;
+
 			HALT:       next_state = HALT;
+
 			default:    next_state = FETCH;
 		endcase
 
-	// SPI state logic
-	always_ff @(posedge i_clock, negedge i_reset)
-		if (!i_reset) begin
-			spi_state <= IDLE;
-			spi_done <= 0;
-		end else case (spi_state)
-			IDLE:      begin
-				spi_state <= spi_active ? SEND : IDLE;
-				spi_done <= 0;
-			end
-			SEND:      spi_state <= (!u_spi.miso && u_spi.mosi) ? SENDING : SEND;
-			SENDING:   if (alu_active)      spi_state <= (alu_counter_out == $bits(alu_packet_out) - 1) ? RECEIVE : SENDING;
-				         else if (mul_active) spi_state <= (mul_counter_out == $bits(mul_packet_out) - 1) ? RECEIVE : SENDING;
-				         else if (bas_active) spi_state <= (bas_counter_out == $bits(bas_packet_out) - 1) ? RECEIVE : SENDING;
-			RECEIVE:   spi_state <= (u_spi.miso && !u_spi.mosi) ? RECEIVING : RECEIVE;
-			RECEIVING: spi_state <= (counter_in == $bits(packet_in) - 1) ? DONE : RECEIVING;
-			DONE:      begin
-				spi_state <= IDLE;
-				spi_done <= 1;
-			end
-		endcase
-
-	// DECODE logic
+	/**
+	 * Decodes the current instruction asynchronously; the signals inside this block will be saved in the DECODE->EXECUTE
+	 * temporal barrier.
+	 */
 	always_comb
-		if (!i_reset) { operation, is_immediate, rd, rs_1, rs_2, immediate } = '0;
+		if (!i_reset) { operation, is_immediate, rd, rs1, rs2, immediate } = '0;
 		else if (instruction_reg[12]) { operation, is_immediate, rd, immediate } = instruction_reg;
-		else { operation, is_immediate, rd, rs_1, rs_2 } = instruction_reg;
+		else { operation, is_immediate, rd, rs1, rs2 } = instruction_reg;
 
-	// PC increment
-	always_ff @(posedge i_clock, negedge i_reset)
-		if (!i_reset) pc <= '0;
-		else if (current_state == FETCH) pc <= pc + 1;
-
-	// FETCH -> DECODE barrier
-	always_ff @(posedge i_clock, negedge i_reset)
-		if (!i_reset) instruction_reg <= '0;
-		else if (current_state == FETCH) instruction_reg <= read_ram.read_data;
-
-	// DECODE -> EXECUTE barrier
-	always_ff @(posedge i_clock, negedge i_reset)
-		if (!i_reset) { opcode_reg , is_immediate_reg, rd_address_reg, rs1_value_reg, rs2_value_reg, immediate_reg } <= '0;
-		 else if (current_state == DECODE) begin
-			opcode_reg <= operation;
-			is_immediate_reg <= is_immediate;
-			rd_address_reg <= rd;
-			rs1_value_reg <= registers[rs_1];
-			rs2_value_reg <= registers[rs_2];
-			immediate_reg <= immediate;
-		end
-
-	// EXECUTE -> WRITE_BACK barrier
+	/**
+	 * SPI FSM state transition and execution logic.
+	 */
 	always_ff @(posedge i_clock, negedge i_reset)
 		if (!i_reset) begin
-			wb_address_reg <= '0;
-			result_reg <= '0;
-		end
-		else if (current_state == EXECUTE) begin
-			wb_address_reg <= rd_address_reg;
-			if (spi_done) result_reg <= packet_in;
-		end
-
-	always_ff @(posedge i_clock, negedge i_reset) begin: StateMachine
-		if (!i_reset) begin
+			spi_state       <= IDLE;
 			packet_in       <= '0;
 			counter_in      <= '0;
 			alu_packet_out  <= '0;
@@ -303,29 +306,117 @@ module Processor(
 			bas_counter_out <= '0;
 			mul_packet_out  <= '0;
 			mul_counter_out <= '0;
-		end
-		else case (current_state)
+		end else case (spi_state)
+			IDLE:      spi_state <= spi_active ? SEND : IDLE;
 
-			EXECUTE: case (spi_state)
-				SEND:       if (alu_active)      alu_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
-										else if (mul_active) mul_packet_out <= { rs2_value_reg, rs1_value_reg };
-										else if (bas_active) bas_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
+			SEND:      begin
+				if (!u_spi.miso && u_spi.mosi) begin
+					if (alu_active)      alu_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
+					else if (mul_active) mul_packet_out <= { rs2_value_reg, rs1_value_reg };
+					else if (bas_active) bas_packet_out <= { rs2_value_reg, rs1_value_reg, opcode_reg };
+					spi_state <= SENDING;
+				end else spi_state <= SEND;
+			end
 
-				SENDING:    if (alu_active)      alu_counter_out <= (alu_counter_out == $bits(alu_packet_out) - 1) ? 0 : alu_counter_out + 1;
-										else if (mul_active) mul_counter_out <= (mul_counter_out == $bits(mul_packet_out) - 1) ? 0 : mul_counter_out + 1;
-										else if (bas_active) bas_counter_out <= (bas_counter_out == $bits(bas_packet_out) - 1) ? 0 : bas_counter_out + 1;
-
-				RECEIVING:  begin
-					packet_in[counter_in] <= u_spi.miso;
-					counter_in <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
+			SENDING:   begin
+				if (alu_active) begin
+					if (alu_counter_out == $bits(alu_packet_out) - 1) begin
+						alu_counter_out <= 0;
+						spi_state       <= RECEIVE;
+					end else begin
+						alu_counter_out <= alu_counter_out + 1;
+						spi_state       <= SENDING;
+					end
+				end else if (bas_active) begin
+					if (bas_counter_out == $bits(bas_packet_out) - 1) begin
+						bas_counter_out <= 0;
+						spi_state       <= RECEIVE;
+					end else begin
+						bas_counter_out <= bas_counter_out + 1;
+						spi_state       <= SENDING;
+					end
+				end else if (mul_active) begin
+					if (mul_counter_out == $bits(mul_packet_out) - 1) begin
+						mul_counter_out <= 0;
+						spi_state       <= RECEIVE;
+					end else begin
+						mul_counter_out <= mul_counter_out + 1;
+						spi_state       <= SENDING;
+					end
 				end
-			endcase
+			end
 
-			WRITE_BACK: if (opcode_reg == LW) registers[wb_address_reg] <= read_ram.read_data;
-				          else if (opcode_reg inside { ADD, AND, OR, MUL, SHL, SHR }) registers[wb_address_reg] <= result_reg;
+			RECEIVE:   spi_state <= (u_spi.miso && !u_spi.mosi) ? RECEIVING : RECEIVE;
+
+			RECEIVING: begin
+				packet_in[counter_in] <= u_spi.miso;
+				counter_in            <= (counter_in == $bits(packet_in) - 1) ? 0 : counter_in + 1;
+				spi_state             <= (counter_in == $bits(packet_in) - 1) ? DONE : RECEIVING;
+			end
+
+			DONE:      spi_state <= IDLE;
+
+			default:   spi_state <= IDLE;
 		endcase
 
-		current_state <= next_state;
-	end: StateMachine
+	/**
+	 * Synchronous program counter increment on FETCH.
+	 */
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (!i_reset) pc <= '0;
+		else if (current_state == FETCH) pc <= pc + 1;
+	
+	/**
+	 * Processor FSM state transition.
+	 */
+	always_ff @(posedge i_clock, negedge i_reset) current_state <= next_state;
+
+	/**
+	 * FETCH->DECODE temporal barrier.
+	 */
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (!i_reset) instruction_reg <= '0;
+		else if (current_state == FETCH) instruction_reg <= read_ram.read_data;
+
+	/**
+	* DECODE->EXECUTE temporal barrier.
+	*/
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (!i_reset) begin
+			opcode_reg       <= Operation'(0);
+			is_immediate_reg <= '0;
+			rd_address_reg   <= '0;
+			rs1_value_reg    <= '0;
+			rs2_value_reg    <= '0;
+			immediate_reg    <= '0;
+		end else if (current_state == DECODE) begin
+			opcode_reg       <= operation;
+			is_immediate_reg <= is_immediate;
+			rd_address_reg   <= rd;
+			rs1_value_reg    <= registers[rs1];
+			rs2_value_reg    <= registers[rs2];
+			immediate_reg    <= immediate;
+		end
+
+	/**
+	* EXECUTE->WRITE_BACK temporal barrier.
+	*/
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (!i_reset) begin
+			wb_address_reg <= '0;
+			result_reg     <= '0;
+		end else if (current_state == EXECUTE) begin
+			wb_address_reg <= rd_address_reg;
+			result_reg     <= spi_done ? packet_in : result_reg;
+		end
+
+	/**
+	 * `WRITE_BACK` state execution.
+	 */
+	always_ff @(posedge i_clock, negedge i_reset)
+		if (current_state == WRITE_BACK) begin
+			if (opcode_reg == LW) registers[wb_address_reg] <= read_ram.read_data;
+			else if (opcode_reg inside { ADD, AND, OR, MUL, SHL, SHR }) registers[wb_address_reg] <= result_reg;
+		end
 
 endmodule: Processor

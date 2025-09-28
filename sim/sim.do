@@ -25,4 +25,4 @@ eval vlog -work work $SOURCES
 vsim -voptargs=+acc $TOP_ENTITY
 
 do wave.do
-run 30ns
+run 24000 ns

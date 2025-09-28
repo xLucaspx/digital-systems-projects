@@ -5,9 +5,20 @@
  */
 package Isa;
 
+	/**
+	 * Defines the width of the address to access any memory position.
+	 */
 	localparam int MEMORY_ADDRESS_WIDTH = 8;
-	localparam int MEMORY_DATA_WIDTH = 32;
+
+	/**
+	 * Defines the memory size, i.e., the amount of available memory positions.
+	 */
 	localparam int MEMORY_DEPTH = 1 << MEMORY_ADDRESS_WIDTH;
+
+	/**
+	 * Defines the size (bit width) of each memory position.
+	 */
+	localparam int MEMORY_DATA_WIDTH = 32;
 
 	/**
 	 * Number of operations that the processor can perform.
@@ -39,14 +50,18 @@ package Isa;
 	 */
 	localparam int REGISTER_SIZE = 32;
 
-	// TODO doc
-	localparam int INSTRUCTION_SIZE = 16; // ($clog2(Operation) + 3 * $clog2(REGISTER_BANK_SIZE) + 1);
+	/**
+	 * Defines the instruction size for this architecture.
+	 */
+	localparam int INSTRUCTION_SIZE = 16;
 
 	/**
-	 * Packet transmitted to the ALU from the processor. It contains two `REGISTER_SIZE` operands and an `Operation`
-	 * code in the follwing format:
+	 * Packet transmitted to the ALU from the processor. It contains two `REGISTER_SIZE` operands and an `Operation` code
+	 * in the follwing format:
 	 *
 	 * | op_2 | op_1 | op_code |
+	 *
+	 * By convention, the operation code should be transmitted first.
 	 */
 	typedef struct packed {
 		logic [REGISTER_SIZE - 1 : 0] op_2;
@@ -55,27 +70,27 @@ package Isa;
 	} AluPacket;
 
 	/**
-	 * Packet transmitted to the multiplier from the processor. It contains two `REGISTER_SIZE` operands, as follows:
-	 *
-	 * | op_2 | op_1 |
-	 *
-	 */
-	typedef struct packed {
-		logic [REGISTER_SIZE - 1 : 0] op_2;
-		logic [REGISTER_SIZE - 1 : 0] op_1;
-	} MulPacket;
-
-	/**
 	 * Packet transmitted to the barrel shifter from the processor. It contains the amount of bits to shift -- a
 	 * $clog2(REGISTER_SIZE) wide value --, a `REGISTER_SIZE` operand and an `Operation`, as follows:
 	 *
 	 * | shift_amount | op | op_code |
 	 *
+	 * By convention, the operation code should be transmitted first.
 	 */
 	typedef struct packed {
 		logic [$clog2(REGISTER_SIZE) - 1 : 0] shift_amount;
 		logic [REGISTER_SIZE - 1 : 0] op;
 		Operation op_code;
 	} ShifterPacket;
+
+	/**
+	 * Packet transmitted to the multiplier from the processor. It contains two `REGISTER_SIZE` operands, as follows:
+	 *
+	 * | op_2 | op_1 |
+	 */
+	typedef struct packed {
+		logic [REGISTER_SIZE - 1 : 0] op_2;
+		logic [REGISTER_SIZE - 1 : 0] op_1;
+	} MulPacket;
 
 endpackage: Isa

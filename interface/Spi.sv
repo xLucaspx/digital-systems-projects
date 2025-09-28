@@ -1,19 +1,20 @@
 `default_nettype none
 
 /**
- * Serial Peripheral Interface (SPI), standard for synchronous serial communication. It is possible to have one master
+ * Serial Peripheral Interface (SPI), standard for synchronous serial communication. It's possible to have one master
  * and multiple slaves, but the communication must be done with only one slave at a time, i.e., the master can only send
  * data to or receive data from one slave at a time.
  *
- * - sclk: system clock, signal from master to all slaves;
- * - miso: master in slave out, serial output from a slave to the master;
-
- // TODO MISO tri-net, must always be set to high-Z when not selected:
- // Drive MISO only when this slave is selected; otherwise leave it high-Z so other slaves can drive the line. Use a
- // continuous assignment to a net (tri) in the `Spi` interface to avoid multiple procedural drivers warnings.
-
- * - mosi: master out slave in, serial output from master to the selected slave;
- * - nss:  slave select, active on low signal from the master to enable a specific slave.
+ * [Parameters]
+ * - NumberOfSlaves: How many slaves are connected to this SPI.
+ *
+ * [Wires]
+ * - sclk: System clock, signal from master to all slaves.
+ * - miso: Master in slave out, serial output from a slave to the master. It's a tri (net), i.e., all slaves communicate
+ *         through it, and so they must set it to high-Z when they're not selected; this way, other slaves can drive the
+ *         line when they're selected.
+ * - mosi: Master out slave in, serial output from master to the selected slave.
+ * - nss:  Slave select, active on low signal from the master to enable a specific slave.
  */
 interface Spi#(parameter int NumberOfSlaves = 1);
 

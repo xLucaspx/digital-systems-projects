@@ -1,9 +1,12 @@
 `default_nettype none
-`timescale 1ps/1ps
+`timescale 1ns/1ps
 
 // TODO: `timescale 1ns/1ps
 // TODO: document testbench
 // TODO: print test function, rotate function
+// TODO: finish doc
+// TODO: module regbank (?)
+// TODO: else/default e setar os bgl em 0 quando não for usado, e.g. imm
 module ProcessorTb;
 
 logic clock = 0;
