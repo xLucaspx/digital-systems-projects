@@ -40,46 +40,55 @@ initial foreach (u_processor_dut.registers[i]) u_processor_dut.registers[i] = $u
  * time in the `default` statement, the value will be the same in all positions.
  */
 initial u_ram.memory = '{
-	0 : { Isa::LW,  1'b1, 4'd1,  8'd101       }, // r1 = 1;
-	1 : { Isa::LW,  1'b1, 4'd0,  8'd100       }, // r0 = 0;
-	2 : { Isa::ADD, 1'b0, 4'd2,  4'd1,  4'd1  }, // r2 = r1 + r1;
-	3 : { Isa::SW,  1'b1, 4'd2,  8'd255       }, // m[255] = r2;
-	4 : { Isa::MUL, 1'b0, 4'd3,  4'd2,  4'd2  }, // r3 = r2 * r2;
-	5 : { Isa::SHL, 1'b0, 4'd4,  4'd3,  4'd1  }, // r4 = r3 ROL 1;
+	0 : { Isa::LW,  1'b1, 4'd1,  8'd101       }, // r1 = m[101];   (  1)
+	1 : { Isa::LW,  1'b1, 4'd0,  8'd100       }, // r0 = m[100];   (  0)
+	2 : { Isa::SHL, 1'b0, 4'd2,  4'd1,  4'd1  }, // r2 = r1 ROL 1; (  2)
+	3 : { Isa::LW,  1'b1, 4'd5,  8'd102       }, // r5 = m[102];   ( 21)
+	4 : { Isa::MUL, 1'b0, 4'd3,  4'd5,  4'd2  }, // r3 = r5 * r2;  ( 42)
+	5 : { Isa::SW,  1'b1, 4'd3,  8'd255       }, // m[255] = r3;
+	6 : { Isa::LW,  1'b1, 4'd5,  8'd103       }, // r5 = m[103];   (-42)
+	7 : { Isa::ADD, 1'b0, 4'd4,  4'd3,  4'd5  }, // r4 = r3 + r5;  (  0)
+	8 : { Isa::AND, 1'b0, 4'd4,  4'd3,  4'd5  }, // r4 = r3 & r5;
+	9 : { Isa::OR, 1'b0, 4'd4,  4'd3,  4'd5  },  // r4 = r3 | r5;
 
-	6 : { Isa::AND, 1'b0, 4'd15, 4'd15, 4'd15 },
-	7 : { Isa::MUL, 1'b0, 4'd14, 4'd14, 4'd14 },
-	8 : { Isa::ADD, 1'b0, 4'd13, 4'd13, 4'd13 },
-	9 : { Isa::OR,  1'b0, 4'd12, 4'd12, 4'd12 },
-	10: { Isa::SHL, 1'b0, 4'd11, 4'd11, 4'd11 },
-	11: { Isa::SHR, 1'b0, 4'd10, 4'd10, 4'd10 },
+	10: { Isa::AND, 1'b0, 4'd15, 4'd15, 4'd15 },
+	11: { Isa::MUL, 1'b0, 4'd14, 4'd14, 4'd14 },
+	12: { Isa::ADD, 1'b0, 4'd13, 4'd13, 4'd13 },
+	13: { Isa::OR,  1'b0, 4'd12, 4'd12, 4'd12 },
+	14: { Isa::SHL, 1'b0, 4'd11, 4'd11, 4'd11 },
+	15: { Isa::SHR, 1'b0, 4'd10, 4'd10, 4'd10 },
 
-	12: { Isa::OR,  1'b0, 4'd9, 4'd10, 4'd11  },
-	13: { Isa::SHR, 1'b0, 4'd9, 4'd10, 4'd11  },
-	14: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd11  },
-	15: { Isa::MUL, 1'b0, 4'd9, 4'd10, 4'd11  },
-	16: { Isa::SHL, 1'b0, 4'd9, 4'd10, 4'd11  },
-	17: { Isa::AND, 1'b0, 4'd9, 4'd10, 4'd11  },
+	16: { Isa::OR,  1'b0, 4'd9, 4'd10, 4'd11  },
+	17: { Isa::SHR, 1'b0, 4'd9, 4'd10, 4'd11  },
+	18: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd11  },
+	19: { Isa::MUL, 1'b0, 4'd9, 4'd10, 4'd11  },
+	20: { Isa::SHL, 1'b0, 4'd9, 4'd10, 4'd11  },
+	21: { Isa::AND, 1'b0, 4'd9, 4'd10, 4'd11  },
 
-	18: { Isa::AND, 1'b0, 4'd12, 4'd13, 4'd14 },
-	19: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd12  },
-	20: { Isa::OR,  1'b0, 4'd6,  4'd7,  4'd8  },
-	21: { Isa::MUL, 1'b0, 4'd3,  4'd4,  4'd5  },
+	22: { Isa::AND, 1'b0, 4'd12, 4'd13, 4'd14 },
+	23: { Isa::ADD, 1'b0, 4'd9, 4'd10, 4'd12  },
+	24: { Isa::OR,  1'b0, 4'd6,  4'd7,  4'd8  },
+	25: { Isa::MUL, 1'b0, 4'd3,  4'd4,  4'd5  },
 
-	22: { Isa::OR,  1'b0, 4'd2, 4'd9, 4'd12   },
-	23: { Isa::AND, 1'b0, 4'd1,  4'd3, 4'd4   },
-	24: { Isa::ADD, 1'b0, 4'd0,  4'd3, 4'd9   },
-	25: { Isa::SW,  1'b1, 4'd10, 8'd255       },
+	26: { Isa::OR,  1'b0, 4'd2, 4'd9, 4'd12   },
+	27: { Isa::AND, 1'b0, 4'd1,  4'd3, 4'd4   },
+	28: { Isa::ADD, 1'b0, 4'd0,  4'd3, 4'd9   },
+	29: { Isa::SW,  1'b1, 4'd10, 8'd254       },
 
-	26: 'b0, // halt
+	30: 'b0, // halt
 
 	// data
-	100: 1'b0,
-	101: 1'b1,
+	100: 'd0,
+	101: 'd1,
+	102: 'd21,
+	103: -'sd42,
 
 	default: $urandom
 };
 
+/**
+ * Verifies the execution of each instruction in the memory. Stops when the instruction is equal to `'0`.
+ */
 initial begin
 	Isa::Operation operation;
 	logic is_immediate;
@@ -96,17 +105,18 @@ initial begin
 	logic [$clog2(Isa::REGISTER_SIZE) - 1 : 0] shift_amount;
 
 	for (int i = 0; i < Isa::MEMORY_DEPTH; i++) begin
+		instruction = u_ram.memory[i];
+
+		if (instruction === '0) begin
+			$display("[NOOP] %05t: mem[%02d] { %h }", $time, i, instruction);
+			break;
+		end
+
 		/**
 		 * Waits until the processor enters the EXECUTE state.
 		 */
 		@(posedge clock iff (u_processor_dut.next_state == u_processor_dut.EXECUTE));
 
-		instruction = u_ram.memory[i];
-
-		if (instruction == 'b0) begin
-			$display("[NOOP] %05t: mem[%02d] { %h }", $time, i, instruction);
-			break;
-		end
 
 		if (instruction[12]) { operation, is_immediate, rd, immediate } = instruction;
 		else begin
@@ -131,9 +141,10 @@ initial begin
 		endcase
 
 		/**
-		 * Waits until the processor exits the FETCH state (1 cycle after WRITE_BACK).
+		 * Waits until the processor exits the WRITE_BACK state, and then waits 1 cycle to check the result.
 		 */
-		@(negedge clock iff (u_processor_dut.current_state == u_processor_dut.FETCH));
+		@(negedge clock iff (u_processor_dut.current_state == u_processor_dut.WRITE_BACK));
+		@(negedge clock);
 
 		if (operation == Isa::SW) actual = u_ram.memory[immediate];
 		else actual = u_processor_dut.registers[rd];
@@ -143,7 +154,7 @@ initial begin
 				$display("[PASS] %07t: mem[%02d]: %h, op: %3s, rd: %02d { %h }, imm: %03d -> %h",
 					$time, i, instruction, operation, rd, rd_value, immediate, actual
 				);
-			end else begin 
+			end else begin
 				$display("[PASS] %07t: mem[%02d]: %h, op: %3s, rd: %02d, rs1: %02d { %h }, rs2: %02d { %h } -> %h",
 					$time, i, instruction, operation, rd, rs1, src1, rs2, src2, actual
 				);

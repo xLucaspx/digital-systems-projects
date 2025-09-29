@@ -45,20 +45,20 @@ add wave -noupdate -expand -group Processor -expand -group barriers -expand -gro
 add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {EXECUTE->WRITE_BACK} -label wb_address_reg  -radix unsigned    /ProcessorTb/u_processor_dut/wb_address_reg
 add wave -noupdate -expand -group Processor -expand -group barriers -expand -group {EXECUTE->WRITE_BACK} -label result_reg      -radix unsigned    /ProcessorTb/u_processor_dut/result_reg
 
-add wave -noupdate -expand -group Processor -expand -group spi -label spi_state                          /ProcessorTb/u_processor_dut/spi_state
-add wave -noupdate -expand -group Processor -expand -group spi -label spi_active                         /ProcessorTb/u_processor_dut/spi_active
-add wave -noupdate -expand -group Processor -expand -group spi -label spi_done                           /ProcessorTb/u_processor_dut/spi_done
-add wave -noupdate -expand -group Processor -expand -group spi -label packet_in       -radix hexadecimal /ProcessorTb/u_processor_dut/packet_in
-add wave -noupdate -expand -group Processor -expand -group spi -label counter_in      -radix decimal     /ProcessorTb/u_processor_dut/counter_in
-add wave -noupdate -expand -group Processor -expand -group spi -label alu_active                         /ProcessorTb/u_processor_dut/alu_active
-add wave -noupdate -expand -group Processor -expand -group spi -label alu_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/alu_packet_out
-add wave -noupdate -expand -group Processor -expand -group spi -label alu_counter_out -radix decimal     /ProcessorTb/u_processor_dut/alu_counter_out
-add wave -noupdate -expand -group Processor -expand -group spi -label bas_active                         /ProcessorTb/u_processor_dut/bas_active
-add wave -noupdate -expand -group Processor -expand -group spi -label bas_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/bas_packet_out
-add wave -noupdate -expand -group Processor -expand -group spi -label bas_counter_out -radix decimal     /ProcessorTb/u_processor_dut/bas_counter_out
-add wave -noupdate -expand -group Processor -expand -group spi -label mul_active                         /ProcessorTb/u_processor_dut/mul_active
-add wave -noupdate -expand -group Processor -expand -group spi -label mul_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/mul_packet_out
-add wave -noupdate -expand -group Processor -expand -group spi -label mul_counter_out -radix decimal     /ProcessorTb/u_processor_dut/mul_counter_out
+add wave -noupdate -expand -group Processor -expand -group spi                    -label spi_state                          /ProcessorTb/u_processor_dut/spi_state
+add wave -noupdate -expand -group Processor -expand -group spi                    -label spi_active                         /ProcessorTb/u_processor_dut/spi_active
+add wave -noupdate -expand -group Processor -expand -group spi                    -label spi_done                           /ProcessorTb/u_processor_dut/spi_done
+add wave -noupdate -expand -group Processor -expand -group spi                    -label packet_in       -radix hexadecimal /ProcessorTb/u_processor_dut/packet_in
+add wave -noupdate -expand -group Processor -expand -group spi                    -label counter_in      -radix decimal     /ProcessorTb/u_processor_dut/counter_in
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group ALU -label alu_active                         /ProcessorTb/u_processor_dut/alu_active
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group ALU -label alu_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/alu_packet_out
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group ALU -label alu_counter_out -radix decimal     /ProcessorTb/u_processor_dut/alu_counter_out
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group BAS -label bas_active                         /ProcessorTb/u_processor_dut/bas_active
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group BAS -label bas_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/bas_packet_out
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group BAS -label bas_counter_out -radix decimal     /ProcessorTb/u_processor_dut/bas_counter_out
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group MUL -label mul_active                         /ProcessorTb/u_processor_dut/mul_active
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group MUL -label mul_packet_out  -radix hexadecimal /ProcessorTb/u_processor_dut/mul_packet_out
+add wave -noupdate -expand -group Processor -expand -group spi -expand -group MUL -label mul_counter_out -radix decimal     /ProcessorTb/u_processor_dut/mul_counter_out
 
 add wave -noupdate -expand -group Registers -label registers -radix hexadecimal /ProcessorTb/u_processor_dut/registers
 
@@ -111,13 +111,13 @@ TreeUpdate [SetDefaultTree]
 WaveRestoreCursors \
 	{{Cursor 1 } {18000   ps} 1} \
 	{{Cursor 2 } {26000   ps} 1} \
-	{{Cursor 3 } {240000  ps} 1} \
-	{{Cursor 4 } {248000  ps} 1} \
-	{{Cursor 5 } {456000  ps} 1} \
-	{{Cursor 6 } {616000  ps} 1} \
-	{{Cursor 7 } {830000  ps} 1} \
-	{{Cursor 8 } {1038000 ps} 1} \
-	{{Cursor 9 } {1252000 ps} 1} \
+	{{Cursor 3 } {186000  ps} 1} \
+	{{Cursor 4 } {194000  ps} 1} \
+	{{Cursor 5 } {402000  ps} 1} \
+	{{Cursor 6 } {410000  ps} 1} \
+	{{Cursor 7 } {418000  ps} 1} \
+	{{Cursor 8 } {632000  ps} 1} \
+	{{Cursor 9 } {846000  ps} 1} \
 	{{Cursor 10} {0       ps} 0}
 quietly wave cursor active 9
 

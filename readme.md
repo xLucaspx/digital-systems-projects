@@ -7,7 +7,8 @@
 
 - [Visão Geral](#visão-geral);
 - [Estrutura do Projeto](#estrutura-do-projeto);
-- [Simulação](#simulação).
+- [Simulação](#simulação);
+- [Formas de Onda](#formas-de-onda).
 
 ## Visão Geral
 
@@ -48,3 +49,53 @@ O [_testbench_](./sim/ProcessorTb.sv) possui diversas instruções que serão ex
 melhor visualização possível do diagrama de formas de onda gerado pela execução da simulação.
 
 ![Diagrama de forma de onda](./docs/waveform.bmp "Exemplo do diagrama de forma de onda esperado após simulação")
+
+## Formas de Onda
+
+Nesta seção serão apresentadas as formas de onda simuladas para cada operação implementada.
+
+### `ADD`
+
+![Forma de onda em interfaces - instrução ADD](./docs/waves/add-0.png "Forma de onda no testbench e nas interfaces para a instrução ADD")
+![Forma de onda no processador - instrução ADD](./docs/waves/add-1.png "Forma de onda no processador para a instrução ADD")
+![Forma de onda no bloco de operação - instrução ADD](./docs/waves/add-2.png "Forma de onda no bloco ALU para a instrução ADD")
+
+### `AND`
+
+![Forma de onda em interfaces - instrução AND](./docs/waves/and-0.png "Forma de onda no testbench e nas interfaces para a instrução AND")
+![Forma de onda no processador - instrução AND](./docs/waves/and-1.png "Forma de onda no processador para a instrução AND")
+![Forma de onda no bloco de operação - instrução AND](./docs/waves/and-2.png "Forma de onda no bloco ALU para a instrução AND")
+
+### `OR`
+
+![Forma de onda em interfaces - instrução OR](./docs/waves/or-0.png "Forma de onda no testbench e nas interfaces para a instrução OR")
+![Forma de onda no processador - instrução OR](./docs/waves/or-1.png "Forma de onda no processador para a instrução OR")
+![Forma de onda no bloco de operação - instrução OR](./docs/waves/or-2.png "Forma de onda no bloco ALU para a instrução OR")
+
+### `MUL`
+
+![Forma de onda em interfaces - instrução MUL](./docs/waves/mul-0.png "Forma de onda no testbench e nas interfaces para a instrução MUL")
+![Forma de onda no processador - instrução MUL](./docs/waves/mul-1.png "Forma de onda no processador para a instrução MUL")
+![Forma de onda no bloco de operação - instrução MUL](./docs/waves/mul-2.png "Forma de onda no bloco multiplicador para a instrução MUL")
+
+### `SHL`
+
+![Forma de onda em interfaces - instrução SHL](./docs/waves/shl-0.png "Forma de onda no testbench e nas interfaces para a instrução SHL")
+![Forma de onda no processador - instrução SHL](./docs/waves/shl-1.png "Forma de onda no processador para a instrução SHL")
+![Forma de onda no bloco de operação - instrução SHL](./docs/waves/shl-2.png "Forma de onda no bloco shifter para a instrução SHL")
+
+### `SHR`
+
+![Forma de onda em interfaces - instrução SHR](./docs/waves/shr-0.png "Forma de onda no testbench e nas interfaces para a instrução SHR")
+![Forma de onda no processador - instrução SHR](./docs/waves/shr-1.png "Forma de onda no processador para a instrução SHR")
+![Forma de onda no bloco de operação - instrução SHR](./docs/waves/shr-2.png "Forma de onda no bloco shifter para a instrução SHR")
+
+### `LW`
+
+![Forma de onda em interfaces - instrução LW](./docs/waves/lw-0.png "Forma de onda no testbench e nas interfaces para a instrução LW")
+![Forma de onda no processador - instrução LW](./docs/waves/lw-1.png "Forma de onda no processador e na memória para a instrução LW")
+
+### `SW`
+
+![Forma de onda em interfaces - instrução SW](./docs/waves/sw-0.png "Forma de onda no testbench e nas interfaces para a instrução SW")
+![Forma de onda no processador - instrução SW](./docs/waves/sw-1.png "Forma de onda no processador e na memória para a instrução SW")
