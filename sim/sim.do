@@ -13,7 +13,7 @@ append SOURCES " "
 append SOURCES " "
 
 # Modules
-append SOURCES " ../rtl/TopNexysA7.sv"
+append SOURCES " ../rtl/TopNexysA7.sv ../rtl/SoundBuzzer.sv ../rtl/EdgeDetector.sv"
 
 # Testbenches
 append SOURCES " ./TopNexysA7Tb.sv"
@@ -25,4 +25,4 @@ eval vlog -work work $SOURCES
 vsim -voptargs=+acc $TOP_ENTITY
 
 # do wave.do TODO generate wave.do
-run 6000 ns
+run -all
