@@ -4,19 +4,19 @@ vlib work
 vmap work work
 
 set SOURCES ""
-set TOP_ENTITY "work.ProcessorTb"
-
-# Interfaces
-append SOURCES "../interface/Spi.sv "
+set TOP_ENTITY "work.TopNexysA7Tb"
 
 # Packages
-append SOURCES "../rtl/Isa.sv "
+append SOURCES " "
+
+# Interfaces
+append SOURCES " "
 
 # Modules
-append SOURCES "../rtl/Alu.sv ../rtl/Processor.sv "
+append SOURCES " ../rtl/TopNexysA7.sv"
 
 # Testbenches
-append SOURCES "./ProcessorTb.sv "
+append SOURCES " ./TopNexysA7Tb.sv"
 
 # Compile Verilog (use eval so the SOURCES string is split into words)
 eval vlog -work work $SOURCES
@@ -24,5 +24,5 @@ eval vlog -work work $SOURCES
 # Run testbench
 vsim -voptargs=+acc $TOP_ENTITY
 
-do wave.do
-run 30ns
+# do wave.do TODO generate wave.do
+run 6000 ns
