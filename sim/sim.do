@@ -13,7 +13,7 @@ append SOURCES " "
 append SOURCES "../interface/TemperatureHumidity.sv"
 
 # Modules
-append SOURCES " ../rtl/TopNexysA7.sv ../rtl/SoundBuzzer.sv ../rtl/EdgeDetector.sv ../rtl/TemperatureHumiditySensor.sv"
+append SOURCES " ../rtl/EdgeDetector.sv ../rtl/SoundBuzzer.sv ../rtl/TemperatureHumiditySensor.sv ../rtl/TopNexysA7.sv"
 
 # Testbenches
 append SOURCES " ./TopNexysA7Tb.sv"

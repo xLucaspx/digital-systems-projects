@@ -1,30 +1,39 @@
-module SoundBuzzer#(
-    parameter integer TIME_CONTROLLER = 10_000_000
+`default_nettype none
+
+/**
+ * Módulo para comunicação com o buzzer.
+ */
+module SoundBuzzer #(
+    /**
+	 * Define o frequência de geração de som no buzzer.
+	 */
+    parameter integer FREQUENCY = 10_000_000
 )(
-    input var logic i_clock,
-    input var logic i_reset,
-    input var logic i_sound,
-    output var logic o_pin_sound
+	input var logic i_clock,
+	input var logic i_reset,
+	input var logic i_sound,
+
+	output var logic o_pin_sound
 );
 
-integer frequency =0;
-always @(posedge i_clock, negedge i_reset) begin
-    if (~i_reset) begin
-        frequency <= 0;
-        o_pin_sound <= 0;
 
-    end else begin
-        // Make sound with period(10ns)*frequency = 0.1s
-        if (i_sound && frequency == TIME_CONTROLLER) begin
-            o_pin_sound <= ~o_pin_sound;
-            frequency <= 0;
-        end else if (i_sound) begin
-            frequency <= frequency + 1;
-        end else begin
-            o_pin_sound <= 0;
-            frequency <= 0;
-        end
+	integer counter = 0;
 
-    end
-end
-endmodule
+	always_ff @(posedge i_clock, posedge i_reset) begin
+		if (i_reset) begin
+			counter <= 0;
+			o_pin_sound <= 0;
+		end else begin
+			if (i_sound && counter == FREQUENCY) begin
+				o_pin_sound <= ~o_pin_sound;
+				counter <= 0;
+			end else if (i_sound) begin
+				counter <= counter + 1;
+			end else begin
+				o_pin_sound <= 0;
+				counter <= 0;
+			end
+		end
+	end
+
+endmodule: SoundBuzzer

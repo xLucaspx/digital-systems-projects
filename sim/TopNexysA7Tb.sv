@@ -4,9 +4,10 @@
 module TopNexysA7Tb;
 
 logic clock = 0;
-always #1 clock = ~clock;
+initial forever #1 clock = ~clock;
 
-logic reset = 0;
+logic reset = 1;
+
 logic sound = 0;
 logic buzzer_sound;
 
@@ -44,6 +45,7 @@ TemperatureHumiditySensor #(
 );
 initial begin
 	repeat (5) @(posedge clock);
+	reset = 0;
 
 	reset = 1;
     $display ("================================");
