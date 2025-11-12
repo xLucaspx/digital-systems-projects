@@ -23,7 +23,11 @@ tri inout_data; // bidirectional data line
 logic inout_drive;
 logic inout_enable = 0;
 assign inout_data = inout_enable ? inout_drive : 1'bz;
-logic [39:0] data_array [0:3] = '{40'h001E0032AA, 40'h00280046D6, 40'h00140028AC, 40'h000F0019C4};
+logic [39:0] data_array [0:3] = '{40'b0000_0010_1000_1100_0000_0001_0101_1111_1110_1110,
+                                40'h001E0032AA,
+                                40'h00280046D6,
+                                40'h00140028AC,
+                                40'h000F0019C4};
 integer count_bits;
 // ################################################
 TemperatureHumidity u_temperatureHumidity(.i_clock(clock));
