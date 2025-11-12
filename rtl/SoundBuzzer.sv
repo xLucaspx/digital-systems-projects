@@ -1,4 +1,6 @@
-module SoundBuzzer#()(
+module SoundBuzzer#(
+    parameter integer TIME_CONTROLLER = 10_000_000
+)(
     input var logic i_clock,
     input var logic i_reset,
     input var logic i_sound,
@@ -13,7 +15,7 @@ always @(posedge i_clock, negedge i_reset) begin
 
     end else begin
         // Make sound with period(10ns)*frequency = 0.1s
-        if (i_sound && frequency == 10_000_000) begin
+        if (i_sound && frequency == TIME_CONTROLLER) begin
             o_pin_sound <= ~o_pin_sound;
             frequency <= 0;
         end else if (i_sound) begin
