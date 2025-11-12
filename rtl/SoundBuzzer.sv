@@ -3,7 +3,12 @@
 /**
  * Módulo para comunicação com o buzzer.
  */
-module SoundBuzzer(
+module SoundBuzzer #(
+    /**
+	 * Define o frequência de geração de som no buzzer.
+	 */
+    parameter integer FREQUENCY = 10_000_000
+)(
 	input var logic i_clock,
 	input var logic i_reset,
 	input var logic i_sound,
@@ -11,10 +16,6 @@ module SoundBuzzer(
 	output var logic o_pin_sound
 );
 
-	/**
-	 * Define o frequência de geração de som no buzzer.
-	 */
-	localparam int FREQUENCY = 10_000_000;
 
 	integer counter = 0;
 
