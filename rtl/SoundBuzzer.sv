@@ -18,8 +18,8 @@ module SoundBuzzer(
 
 	integer counter = 0;
 
-	always_ff @(posedge i_clock, negedge i_reset) begin
-		if (~i_reset) begin
+	always_ff @(posedge i_clock, posedge i_reset) begin
+		if (i_reset) begin
 			counter <= 0;
 			o_pin_sound <= 0;
 		end else begin

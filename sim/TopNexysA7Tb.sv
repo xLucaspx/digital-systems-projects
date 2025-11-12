@@ -6,7 +6,8 @@ module TopNexysA7Tb;
 logic clock = 0;
 initial forever #1 clock = ~clock;
 
-logic reset = 0;
+logic reset = 1;
+
 logic sound = 0;
 logic buzzer_sound;
 
@@ -17,9 +18,10 @@ SoundBuzzer u_soundBuzzer (
 	.o_pin_sound(buzzer_sound)
 );
 
+
 initial begin
 	repeat (5) @(posedge clock);
-	reset = 1;
+	reset = 0;
 
 	$display ("Testing buzzer");
 	sound = 1;
@@ -35,6 +37,8 @@ initial begin
 	end else begin
 		$display ("Buzzer did not stop");
 	end
+
+	$finish;
 end
 
 endmodule: TopNexysA7Tb

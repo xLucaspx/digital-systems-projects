@@ -13,15 +13,9 @@ module EdgeDetector(
 
 	logic din_reg;
 
-	assign o_rising = !din_reg && i_din;
+	always_ff @(posedge i_clock, posedge i_reset)
+		din_reg <= i_reset ? 1'b0 : i_din;
 
-	always_ff @(posedge i_clock, negedge i_reset) begin
-		if (~i_reset == 1'b1) begin
-			din_reg <= 1'b0;
-		end
-		else begin
-			din_reg <= i_din;
-		end
-	end
+	assign o_rising = !din_reg && i_din;
 
 endmodule: EdgeDetector
