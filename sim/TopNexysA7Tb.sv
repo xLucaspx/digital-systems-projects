@@ -11,7 +11,7 @@ logic reset = 1;
 logic sound = 0;
 logic buzzer_sound;
 
-SoundBuzzer #(.TIME_CONTROLLER(10)) u_soundBuzzer (
+SoundBuzzer #(.FREQUENCY(10)) u_soundBuzzer (
         .i_clock(clock),
         .i_reset(reset),
         .i_sound(sound),
@@ -24,11 +24,11 @@ tri inout_data; // bidirectional data line
 logic inout_drive;
 logic inout_enable = 0;
 assign inout_data = inout_enable ? inout_drive : 1'bz;
-logic [39:0] data_array [0:3] = '{40'b0000_0010_1000_1100_0000_0001_0101_1111_1110_1110,
-                                40'h001E0032AA,
-                                40'h00280046D6,
-                                40'h00140028AC,
-                                40'h000F0019C4};
+logic [39:0] data_array [0:4] = '{40'b0000_0010_1000_1100_0000_0001_0101_1111_1110_1110,
+                                40'b0000_0010_1000_1100_0000_0001_0101_1111_1110_1110,
+                                40'b0000_0001_1100_0010_0000_0000_1101_1111_1010_0010,
+                                40'b0000_0000_0111_1011_1000_0000_0011_0010_0010_1101,
+                                40'b0000_0011_1110_1000_0000_0000_0000_0000_1110_1011};
 integer count_bits;
 // ################################################
 TemperatureHumidity u_temperatureHumidity(.i_clock(clock));
@@ -47,7 +47,6 @@ initial begin
 	repeat (5) @(posedge clock);
 	reset = 0;
 
-	reset = 1;
     $display ("================================");
     $display ("Testing Buzzer");
     $display ("================================");

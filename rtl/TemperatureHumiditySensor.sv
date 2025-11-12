@@ -13,9 +13,15 @@ module TemperatureHumiditySensor#(
     TemperatureHumidity.Provider provider
 );
 
+/**
+* Data array to store the received bits
+*/
 logic [SIZE_OF_DATA -1 :0] data_array;
 integer bit_counter;
 
+/**
+* State machine definition
+*/
 typedef enum logic [2:0] {
     IDLE,
     REQUEST,
@@ -32,12 +38,17 @@ integer time_counter;
 integer clock_counter_signal;
 logic valid_data;
 
+/**
+ * Bidirectional data line control
+ */
 logic data_drive;
 logic data_output_en;
 assign b_data = data_output_en ? data_drive : 1'bz;
+// ********************************
+
 logic update_data;
-always @(posedge i_clock , negedge i_reset) begin
-    if (~i_reset) begin
+always_ff @(posedge i_clock , posedge i_reset) begin
+    if (i_reset) begin
         state <= IDLE;
         data_array <= 0;
         data_drive <= 1'b1;
@@ -97,10 +108,13 @@ always @(posedge i_clock , negedge i_reset) begin
         end
     end
 end
-integer clock_counter;
 
-always_ff @(posedge i_clock or negedge i_reset) begin
-    if (~i_reset) begin
+/**
+* Time counter logic
+*/
+integer clock_counter;
+always_ff @(posedge i_clock or posedge i_reset) begin
+    if (i_reset) begin
         clock_counter <= 0;
         time_counter <= 0;
     end else
@@ -124,7 +138,10 @@ always_ff @(posedge i_clock or negedge i_reset) begin
 
 end
 
-always_comb begin : future_state_logic
+/**
+* Next state logic
+*/
+always_comb begin
     case (state)
         IDLE: begin
             if (provider.want_data) begin
@@ -159,7 +176,7 @@ always_comb begin : future_state_logic
         // After receiving each bit, we check if we have received all right bits
         end
         RECEIVING: begin
-            if (bit_counter == SIZE_OF_DATA -1) begin
+            if (bit_counter == SIZE_OF_DATA) begin
                 next_state = VALIDATE;
             end else begin
                 next_state = RECEIVING;
@@ -180,4 +197,4 @@ always_comb begin : future_state_logic
     
 end
 
-endmodule
+endmodule: TemperatureHumiditySensor
