@@ -7,6 +7,8 @@
 
 Adicionando estrutura básica do projeto.
 
+- [x] **Utilizar apenas `posedge` em blocos `always`**.
+
 - [ ] Pesquisar protocolos de comunicação dos sensores;
   - [ ] Se necessário, buscar módulos prontos que implementam os protocolos utilizados.
 - [ ] Escrever um módulo para a comunicação com cada sensor;

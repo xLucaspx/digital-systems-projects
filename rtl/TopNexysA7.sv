@@ -16,7 +16,7 @@ module TopNexysA7(
 
 	int counter;
 
-	always @(posedge i_clock, posedge i_reset) begin
+	always_ff @(posedge i_clock, posedge i_reset) begin
 		if (i_reset) begin
 			o_leds <= 'b0101010101010100;
 			counter <= '0;
