@@ -13,7 +13,7 @@ append SOURCES " "
 append SOURCES " "
 
 # Modules
-append SOURCES " ../rtl/TopNexysA7.sv ../rtl/SoundBuzzer.sv ../rtl/EdgeDetector.sv"
+append SOURCES " ../rtl/EdgeDetector.sv ../rtl/SoundBuzzer.sv ../rtl/TopNexysA7.sv"
 
 # Testbenches
 append SOURCES " ./TopNexysA7Tb.sv"

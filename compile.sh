@@ -13,7 +13,12 @@ if ! command -v vlog >/dev/null 2>&1; then
 	module load questa
 fi
 
-SOURCES=""
+SOURCES="
+	../rtl/EdgeDetector.sv
+	../rtl/SoundBuzzer.sv
+	../rtl/TopNexysA7.sv
+	./TopNexysA7Tb.sv
+"
 
 (
 	cd ./sim/ || exit 1
