@@ -1,6 +1,9 @@
+`default_nettype none
 /*
-This module is based on this datasheet:
-https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf
+* This module is based on this datasheet:
+* https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf
+* It implements a state machine to communicate with a Dht22 Am2302 temperature and humidity sensor.
+*
 */
 module TemperatureHumiditySensor#(
     parameter integer SIZE_OF_DATA = 40,
