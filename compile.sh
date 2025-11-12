@@ -15,6 +15,7 @@ fi
 
 SOURCES="
 	../rtl/EdgeDetector.sv
+	../rtl/Co2Sensor.sv
 	../rtl/SoundBuzzer.sv
 	../rtl/TopNexysA7.sv
 	./TopNexysA7Tb.sv
