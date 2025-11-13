@@ -30,4 +30,13 @@ interface TemperatureHumidity#(
         output want_data
 	);
 
+    function logic [BITS_INFO -1:0] get_temperature();
+        return temperature;
+    endfunction
+
+    function logic [BITS_INFO -1:0] get_humidity();
+        return humidity;
+    endfunction
+
+
 endinterface: TemperatureHumidity
