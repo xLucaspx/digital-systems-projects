@@ -10,22 +10,59 @@
 module TopNexysA7(
 	input var logic i_clock,
 	input var logic i_reset,
+	input var logic i_co2_sensor_data, // Pin AD10N
 
-	output var logic [15:0] o_leds
+	inout tri b_inout_data_temperature_sensor, // Pin AD3N
+
+	output var logic [15:0] o_leds,
+	output var logic o_pin_sound // Pin AD3P
 );
 
-	int counter;
+logic sound;
+logic buzzer_sound;
+SoundBuzzer #(.FREQUENCY(10)) u_soundBuzzer (
+	.i_clock(i_clock),
+	.i_reset(i_reset),
+	.i_sound(sound),
+	.o_pin_sound(buzzer_sound)
+);
 
-	always_ff @(posedge i_clock, posedge i_reset) begin
-		if (i_reset) begin
-			o_leds <= 'b0101010101010100;
-			counter <= '0;
-		end else begin
-			if (counter == 100_000_000) begin
-				o_leds <= ~o_leds;
-				counter <= 0;
-			end else counter <= counter + 1;
-		end
+TemperatureHumidity u_temperatureHumidity(.i_clock(i_clock));
+
+TemperatureHumiditySensor #(
+	.SIZE_OF_DATA(40)
+) u_temperatureHumiditySensor (
+	.i_clock(i_clock),
+	.i_reset(i_reset),
+	.b_data(b_inout_data_temperature_sensor),
+	.provider(u_temperatureHumidity)
+);
+
+logic fire_signal;
+FireController u_fireController (
+	.i_clock(i_clock),
+	.i_reset(i_reset),
+	.o_fire(fire_signal),
+	.costumer(u_temperatureHumidity)
+);
+logic co2_signal;
+Co2Sensor u_Co2Sensor (
+	.i_clock(i_clock),
+	.i_reset(i_reset),
+	.i_sensor_data(i_co2_sensor_data),
+	.o_gas_detected(co2_signal)
+);
+
+always_ff @(posedge i_clock, posedge i_reset) begin
+	if (i_reset) begin
+		o_leds <= 'b0101010101010101;
+		sound <= 0;
+	end else begin
+		o_leds [15:8] <= fire_signal ? 8'b1111_1111 : 8'b0000_0000;
+		o_leds [7:0] <= co2_signal ? 8'b1111_1111 : 8'b0000_0000;
+
+		o_pin_sound <= buzzer_sound;
 	end
+end
 
 endmodule: TopNexysA7

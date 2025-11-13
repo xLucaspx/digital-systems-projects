@@ -65,10 +65,16 @@ always_ff @(posedge i_clock , posedge i_reset) begin
         provider.request_again <= 0;
     end else begin
         state <= next_state;
-        if (state == REQUEST) begin
+        if (state == IDLE) begin
+            // default state, data line is low and different info in valid_info and request_again
+            // represent a good state of communication
+            provider.valid_info <= 0;
+            provider.request_again <= 0;
+        end else if (state == REQUEST) begin
             // master pull the line low to request data
             data_drive <= 1'b0;
             data_output_en <= 1'b1;
+
         end else if (state == REQUESTED) begin
             if (time_counter == 1) begin
                 // master pull the line high after certain time
@@ -116,7 +122,7 @@ end
 * Time counter logic
 */
 integer clock_counter;
-always_ff @(posedge i_clock or posedge i_reset) begin
+always_ff @(posedge i_clock, posedge i_reset) begin
     if (i_reset) begin
         clock_counter <= 0;
         time_counter <= 0;
