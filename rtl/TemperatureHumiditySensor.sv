@@ -7,8 +7,8 @@
 */
 module TemperatureHumiditySensor#(
     parameter integer SIZE_OF_DATA = 40,
-    parameter integer TIME_CONTROLLER_SIGNAL = 1_000_000, // 100_0000 clocks period is 10 ns = 10 ms
-    parameter integer TIME_CONTROLLER_RESPONSE = 40_000)(
+    parameter integer TIME_CONTROLLER_SIGNAL = 500_000, // 500_0000 clocks period is 10 ns = 5 ms
+    parameter integer TIME_CONTROLLER_RESPONSE = 4_000)( // 4_000 clocks period is 10 ns = 40 us
     input var logic i_clock,
     input var logic i_reset,
     inout wire b_data,

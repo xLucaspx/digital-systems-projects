@@ -6,7 +6,7 @@
 module FireController#(
     parameter integer BITS_INFO = 16,
     parameter integer SECONDS = 30,
-    parameter integer FREQUENCY = 1_000_000_000)(
+    parameter integer FREQUENCY = 100_000_000)( // 100_000_000 clocks period is 10 ns = 1s
     input var logic i_clock,
     input var logic i_reset,
     output var logic o_fire,

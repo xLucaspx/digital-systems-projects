@@ -13,15 +13,19 @@ module TopNexysA7(
 	input var logic i_co2_sensor_data, 	// Pin AD10N
 	input var logic i_change_mode,		// M18 (Up Button)
 
+	inout tri        TMP_SDA,          // i2c sda on temp sensor - bidirectional
 	inout tri b_inout_data_temperature_sensor, // Pin AD3N
 
+    output var logic       TMP_SCL,          // i2c scl on temp sensor
+	output var logic [6:0]  SEG,              // 7 segments of each display
+    output var logic [7:0]  AN,               // 8 anodes of 8 displays
 	output var logic [15:0] o_leds,
 	output var logic o_pin_sound // Pin AD3P
 );
 
 logic sound;
 logic buzzer_sound;
-SoundBuzzer #(.FREQUENCY(10)) u_soundBuzzer (
+SoundBuzzer u_soundBuzzer (
 	.i_clock(i_clock),
 	.i_reset(i_reset),
 	.i_sound(sound),
@@ -55,6 +59,41 @@ Co2Sensor u_Co2Sensor (
 	.o_gas_detected(co2_signal)
 );
 
+wire w_200KHz;                  // 200kHz SCL
+wire [7:0] c_data;              // 8 bits of Celsius temperature data
+wire [7:0] f_data;              // 8 bits of Fahrenheit temperature data
+
+// Instantiate i2c master
+I2cMaster i2cmaster(
+	.clk_200KHz(w_200KHz),
+	.temp_data(c_data),
+	.SDA(TMP_SDA),
+	.SCL(TMP_SCL)
+);
+
+// Instantiate 200kHz clock generator
+Clkgen_200KHz clkgen(
+	.clk_100MHz(i_clock),
+	.clk_200KHz(w_200KHz)
+);
+
+Seg7c segcontrol(
+	.clk_100MHz(i_clock),
+	.c_data(c_data),
+	.f_data(f_data),
+	.SEG(SEG),
+	.AN(AN)
+);
+
+
+logic change_mode_edge;
+EdgeDetector u_edgeDetector (
+	.i_clock(i_clock),
+	.i_reset(i_reset),
+	.i_din(i_change_mode),
+	.o_rising(change_mode_edge)
+);
+
 
 integer mode;
 always_ff @(posedge i_clock, posedge i_reset) begin
@@ -63,45 +102,41 @@ always_ff @(posedge i_clock, posedge i_reset) begin
 		sound <= 0;
 		mode <= 0;
 	end else begin
+
+		if (change_mode_edge) begin
+			o_leds <= 'b0000000000000000;
+			mode <= (mode + 1) % 4;
+		end else begin
+
 		// LEDS AND SOUND MODE
 		if (mode == 0) begin
 			o_leds [15:8] <= fire_signal ? 8'b1111_1111 : 8'b0000_0000;
 			o_leds [7:0] <= co2_signal ? 8'b1111_1111 : 8'b0000_0000;
-			sound <= fire_signal | co2_signal;
+			sound <= co2_signal;
 		end else if (mode == 1) begin
+			if (u_temperatureHumiditySensor.b_data == 1'bz) begin
+				o_leds [15:12] <= 4'b1111;
+				o_leds [11:0] <= 4'b0000_0000_0000;
+			end else if (u_temperatureHumiditySensor.b_data == 1'b1) begin
+				o_leds [15:12] <= 4'b0000;
+				o_leds [11:8] <= 4'b1111;
+				o_leds [7:0] <= 4'b0000_0000;
+			end else if (u_temperatureHumiditySensor.b_data == 1'b0) begin
+				o_leds [15:4] <= 4'b0000_0000_0000;
+				o_leds [3:0] <= 4'b1111;
+			end
+			sound <= 0;
+		end else if (mode == 2) begin
 			// TEMPERATURE
 			o_leds [15:0] <= u_temperatureHumidity.get_temperature();
 			sound <= 0;
-		end else if (mode == 2) begin
+		end else if (mode == 3) begin
 			// Humidity
 			o_leds [15:0] <= u_temperatureHumidity.get_humidity();
-			sound <= 0;
+		  	sound <= 0;
 		end
 		o_pin_sound <= buzzer_sound;
 	end
-end
-
-logic change_mode_edge;
-logic changed;
-EdgeDetector u_edgeDetector (
-	.i_clock(i_clock),
-	.i_reset(i_reset),
-	.i_din(i_change_mode),
-	.o_rising(change_mode_edge)
-);
-
-always_ff @(posedge i_clock, posedge i_reset) begin
-	if (i_reset) begin
-		changed <= 0;
-	end else begin
-		// Change mode logic
-		if (change_mode_edge && changed == 1'b0) begin
-			mode <= (mode + 1) % 3;
-			changed <= 1;
-		end else if (!change_mode_edge) begin
-			changed <= 0;
-		end
-
 	end
 end
 
