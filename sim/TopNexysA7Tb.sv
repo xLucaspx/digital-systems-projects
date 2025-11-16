@@ -86,21 +86,21 @@ initial begin
         end
     end
 
-    // $display ("================================");
-    // $display ("Testing Buzzer");
-    // $display ("================================");
-    // sound = 1;
-    // repeat (3) begin
-    //     @(posedge buzzer_sound);
-    //     @(negedge buzzer_sound);
-    //     $display ("Buzzer is making sound");
-    // end
-    // sound = 0;
-    // if (buzzer_sound == 0) begin
-    //     $display ("Buzzer stopped");
-    // end else begin
-    //     $display ("Buzzer did not stop");
-    // end
+    $display ("================================");
+    $display ("Testing Buzzer");
+    $display ("================================");
+    sound = 1;
+    repeat (3) begin
+        @(posedge buzzer_sound);
+        @(negedge buzzer_sound);
+        $display ("Buzzer is making sound");
+    end
+    sound = 0;
+    if (buzzer_sound == 0) begin
+        $display ("Buzzer stopped");
+    end else begin
+        $display ("Buzzer did not stop");
+    end
 
     // $display ("================================");
     // $display ("Testing TemperatureHumiditySensor");
@@ -156,6 +156,9 @@ initial begin
     //         inout_drive = 1'b1;
     //     end
     //     inout_enable = 0;
+    // repeat (5) begin
+    //         @(posedge clock);
+    //     end
 
     //     if ({u_temperatureHumidity.Costumer.humidity, u_temperatureHumidity.Costumer.temperature} == data_array[i][39:8]) begin
     //         $display ("[PASSED] Sent data: %h == %h", {u_temperatureHumidity.Costumer.humidity, u_temperatureHumidity.Costumer.temperature}, data_array[i][39:8]);
@@ -229,7 +232,38 @@ initial begin
         end
         $display ("[INFO] Fire difference: %b, actual temp %h > (old temp %h +10) -> %h ", u_fireController.o_fire, u_fireController.actual_temp, u_fireController.old_temp, (u_fireController.old_temp+10));
     end
+    
+    $display ("================================");
+    $display ("Testing IDLE if sensor does not respond");
+    $display ("================================");
+    repeat (1) begin
+            @(posedge u_fireController.costumer.want_data);
+            $display ("********************************");
+            $display ("Consumer want");
+            $display ("********************************");
+    end
+    $display ("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    $display ("Sensor STATUS");
+    @(negedge inout_data);
+    $display ("Sensor Received request LOW");
+    @(posedge inout_data);
+    $display ("Sensor Received HIGH the line is free now");
+    $display ("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 
+    # TIME_CONTROLLER_RESPONSE;
+    # TIME_CONTROLLER_RESPONSE;
+    # TIME_CONTROLLER_RESPONSE;
+    # TIME_CONTROLLER_RESPONSE;
+    # TIME_CONTROLLER_RESPONSE;
+
+    if (u_temperatureHumiditySensor.state == u_temperatureHumiditySensor.IDLE) begin
+        $display ("[PASSED] Sensor returned to IDLE state after timeout");        
+    end else begin
+        $display ("[FAILED] Sensor did not return to IDLE state after timeout, current state: %d, clock_couter: %d", u_temperatureHumiditySensor.state, u_temperatureHumiditySensor.clock_counter);        
+    end
+
+        
+    
     $finish;
 
 

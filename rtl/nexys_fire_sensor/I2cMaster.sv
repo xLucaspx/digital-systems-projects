@@ -16,7 +16,8 @@ module I2cMaster(
       
     // Set value of i2c SCL signal to the sensor - 10kHz            
     assign SCL = clk_reg;   
-    // ********************************************************************     
+    // ********************************************************************
+    wire i_bit;                    // input bit from SDA line 
 
     // Signal Declarations               
     parameter [7:0] sensor_address_plus_read = 8'b1001_0111;// 0x97

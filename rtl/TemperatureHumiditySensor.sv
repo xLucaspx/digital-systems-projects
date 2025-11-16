@@ -87,6 +87,12 @@ always_ff @(posedge i_clock , posedge i_reset) begin
             // and wait for it to pull it low and high and low again
             data_output_en <= 1'b0;
             bit_counter <= 0;
+            if (next_state == IDLE) begin
+                // Timeout case, go back to idle
+                data_output_en <= 1'b1;
+                data_drive <= 1'b1;
+                provider.request_again <= 1;
+            end
         end else if (state == RECEIVING) begin
             if (b_data == 1'b1) begin
                 clock_counter_signal <= clock_counter_signal + 1;
@@ -129,9 +135,11 @@ always_ff @(posedge i_clock, posedge i_reset) begin
     end else
     if (state == REQUEST && clock_counter == TIME_CONTROLLER_SIGNAL) begin
         time_counter <= 1;
+        clock_counter <= 0;
     end else if (state == REQUEST ) begin
         clock_counter <= clock_counter + 1;
-    end else if (state == RECEIVE) begin
+    end
+    else if (state == RECEIVE) begin
         // Counting the transitions of b_data low-high-low
         if (b_data == 1'b0 && time_counter == 0) begin
             time_counter <= 1;
@@ -140,6 +148,7 @@ always_ff @(posedge i_clock, posedge i_reset) begin
         end else if (b_data == 1'b0 && time_counter == 2) begin
             time_counter <= 3;
         end
+        clock_counter <= clock_counter + 1;
     end else begin
         clock_counter <= 0;
         time_counter <= 0;
@@ -171,7 +180,7 @@ always_comb begin
         REQUESTED: begin
             if (b_data == 1'b0) begin
                 next_state = RECEIVE;
-            end else begin
+            end  else begin
                 next_state = REQUESTED;
             end
         end
@@ -179,6 +188,8 @@ always_comb begin
         RECEIVE: begin
             if (time_counter == 3) begin
                 next_state = RECEIVING;
+            end else if (clock_counter > (TIME_CONTROLLER_RESPONSE * 2) && time_counter == 0) begin
+                next_state = IDLE; // Timeout, go back to idle
             end else begin
                 next_state = RECEIVE;
             end
