@@ -42,7 +42,7 @@ FireController #(
     .costumer(u_temperatureHumidity)
 );
 logic set_temperature_edge = 0;
-logic [12:0] c_extended_data = 12'h100;// Example temperature 16.0 C
+logic [11:0] c_extended_data = 12'h100;// Example temperature 16.0 C
 TemperatureMetrics #(
     .FREQUENCY(100)
 ) u_temperatureMetrics (

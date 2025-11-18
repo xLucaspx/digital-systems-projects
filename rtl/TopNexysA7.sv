@@ -36,17 +36,8 @@ SoundBuzzer u_soundBuzzer (
 
 TemperatureHumidity u_temperatureHumidity(.i_clock(i_clock));
 
-TemperatureHumiditySensor #(
-	.SIZE_OF_DATA(40)
-) u_temperatureHumiditySensor (
-	.i_clock(i_clock),
-	.i_reset(i_reset),
-	.b_data(b_inout_data_temperature_sensor),
-	.provider(u_temperatureHumidity)
-);
-
 logic fire_signal;
-FireController #(.SECONDS(5)) u_fireController (
+FireController #(.SECONDS(10)) u_fireController (
 	.i_clock(i_clock),
 	.i_reset(i_reset),
 	.o_fire(fire_signal),
@@ -84,7 +75,6 @@ Clkgen_200KHz clkgen(
 Seg7c segcontrol(
 	.clk_100MHz(i_clock),
 	.c_data((u_temperatureHumidity.temperature[9:0])), // 10 bits Celsius temperature data
-	.f_data(f_data),
 	.SEG(SEG),
 	.AN(AN)
 );
@@ -106,7 +96,7 @@ EdgeDetector u_edgeDetector2 (
 	.o_rising(set_temperature_edge)
 );
 
-TemperatureMetrics u_temperatureMetrics (
+TemperatureMetrics #(.SECONDS(3)) u_temperatureMetrics (
 	.i_clock(i_clock),
 	.i_reset(i_reset),
 	.i_set_standard_temperature(set_temperature_edge),

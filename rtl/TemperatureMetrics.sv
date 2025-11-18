@@ -69,7 +69,10 @@ always_ff @(posedge i_clock, posedge i_reset) begin
         timer <= 0;
         data_array <= 0;
     end else begin
-        if (timer == SECONDS) begin
+        
+        if (i_set_standard_temperature) begin
+            data_array <= get_not_decimal_temperature();
+        end else if (timer == SECONDS) begin
             if (generate_max_temp() > data_array) begin
                 data_array <= data_array + 1;
             end else begin
@@ -86,11 +89,11 @@ always_ff @(posedge i_clock, posedge i_reset) begin
 
 end
 function logic [9:0] generate_max_temp();
-        return get_not_decimal_temperature() * ((get_not_decimal_temperature() % standard_temperature) +1);
+        return get_not_decimal_temperature() * ((get_not_decimal_temperature() - standard_temperature) +1);
 endfunction
 
 function logic [7:0] get_not_decimal_temperature();
-        return i_temperature[11:3]; // 8 bits
+        return i_temperature[11:4]; // 8 bits
 endfunction
 
 /**
