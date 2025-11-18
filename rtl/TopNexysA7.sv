@@ -119,7 +119,7 @@ always_ff @(posedge i_clock, posedge i_reset) begin
 
 		// LEDS AND SOUND MODE
 		if (mode == 0) begin
-			o_leds [15:0] <= fire_signal ? 8'b1111_1111_1111_1111 : 8'b0000_0000_0000_0000;
+			o_leds [15:0] <= fire_signal ? 16'b1111_1111_1111_1111 : 16'b0000_0000_0000_0000;
 			sound <= co2_signal;
 		end else if (mode == 1) begin
 			sound <= 0;
