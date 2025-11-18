@@ -1,21 +1,17 @@
 `timescale 1ns / 1ps
 module Seg7c(
     input clk_100MHz,               // Nexys 4 DDR clock
-    input [7:0] c_data,             // Temp data from i2c master
-    input [7:0] f_data,             // Temp data from temp converter
+    input [9:0] c_data,             // Temp data from i2c master
     output reg [6:0] SEG,           // 7 Segments of Displays
     output reg [7:0] AN             // 4 Anodes of 8 to display Temp C
     );
     
     // Binary to BCD conversion of temperature data
-    wire [3:0] c_tens, c_ones;
-    assign c_tens = c_data / 10;           // Tens value of C temp data
+    wire [3:0] c_hundred, c_tens, c_ones;
+    assign c_hundred = c_data / 100;           // Tens value of C temp data
+    assign c_tens = (c_data % 100) / 10;;           // Tens value of C temp data
     assign c_ones = c_data % 10;           // Ones value of C temp data
-    
-    wire [3:0] f_tens, f_ones;
-    assign f_tens = f_data / 10;           // Tens value of C temp data
-    assign f_ones = f_data % 10;           // Ones value of C temp data 
-    
+
     // Parameters for segment patterns
     parameter ZERO  = 7'b000_0001;  // 0
     parameter ONE   = 7'b100_1111;  // 1
@@ -96,12 +92,8 @@ module Seg7c(
                         endcase
                     end
             
-            3'o4 : SEG = F;    // Set to F for Fahrenheit
-                        
-            3'o5 : SEG = DEG;  // Set to degrees symbol
-                    
-            3'o6 : begin       // F TEMPERATURE ONES DIGIT
-                        case(f_ones)
+            3'o4 : begin       // C TEMPERATURE HUNDRED DIGIT
+                        case(c_tens)
                             4'b0000 : SEG = ZERO;
                             4'b0001 : SEG = ONE;
                             4'b0010 : SEG = TWO;
@@ -114,20 +106,9 @@ module Seg7c(
                             4'b1001 : SEG = NINE;
                         endcase
                     end
-                    
-            3'o7 : begin       // F TEMPERATURE TENS DIGIT
-                        case(f_tens)
-                            4'b0000 : SEG = ZERO;
-                            4'b0001 : SEG = ONE;
-                            4'b0010 : SEG = TWO;
-                            4'b0011 : SEG = THREE;
-                            4'b0100 : SEG = FOUR;
-                            4'b0101 : SEG = FIVE;
-                            4'b0110 : SEG = SIX;
-                            4'b0111 : SEG = SEVEN;
-                            4'b1000 : SEG = EIGHT;
-                            4'b1001 : SEG = NINE;
-                        endcase
-                    end             
-        endcase  
+            3'o5 : SEG = ZERO;  // Set zero
+            3'o6 : SEG = ZERO;  // Set zero
+            3'o7 : SEG = ZERO;  // Set zero
+
+        endcase
 endmodule

@@ -9,6 +9,7 @@ module FireController#(
     parameter integer FREQUENCY = 100_000_000)( // 100_000_000 clocks period is 10 ns = 1s
     input var logic i_clock,
     input var logic i_reset,
+    input var logic i_flame_sensor,
     output var logic o_fire,
 
     TemperatureHumidity.Costumer costumer
@@ -27,14 +28,15 @@ typedef enum logic [1:0] {
 } state_t;
 
 state_t state, next_state;
-
+logic fire_detected;
+assign o_fire = (fire_detected || ~i_flame_sensor) ? 1'b1 : 1'b0;
 // Simple logic to detect a change in temperature
 always_ff @(posedge i_clock, posedge i_reset) begin
     if (i_reset) begin
         old_temp <= 0;
         actual_temp <= 0;
         state <= WAITING;
-        o_fire <= 0;
+        fire_detected <= 0;
     end else begin
         state <= next_state;
         if (state == REQUEST) begin
@@ -47,11 +49,11 @@ always_ff @(posedge i_clock, posedge i_reset) begin
             end
         end else if (state == PROCESS) begin
             // The difference between the old temperature and the actual temperature
-            // to detect a fire condition is set to 1.0 degrees Celsius.
-            if (actual_temp > old_temp + 10) begin
-                o_fire <= 1;
+            // to detect a fire condition is set to 2.0 degrees Celsius.
+            if (actual_temp > old_temp + 1) begin
+                fire_detected <= 1;
             end else begin
-                o_fire <= 0;
+                fire_detected <= 0;
             end
         end
 
@@ -62,7 +64,7 @@ end
 * Time counter logic
 */
 integer timer;
-longint clock_counter;
+integer clock_counter;
 
 always_ff @(posedge i_clock, posedge i_reset) begin
     if (i_reset) begin
@@ -70,7 +72,7 @@ always_ff @(posedge i_clock, posedge i_reset) begin
         clock_counter <= 0;
     end else
     if (state == WAITING) begin
-        if (clock_counter == (FREQUENCY * SECONDS)) begin
+        if (clock_counter == FREQUENCY) begin
             timer <= timer + 1;
             clock_counter <= 0;
         end else begin

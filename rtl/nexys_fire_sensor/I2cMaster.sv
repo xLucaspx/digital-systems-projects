@@ -4,6 +4,7 @@ module I2cMaster(
     input clk_200KHz,               // i_clk
     inout SDA,                      // i2c standard interface signal
     output [7:0] temp_data,         // 8 bits binary representation of deg C
+    output signed [11:0] temp_data_full_precision,                  // 12 bits binary representation of deg C with decimal precision
     output SCL                      // i2c standard interface signal - 10KHZ
     );
     
@@ -25,7 +26,8 @@ module I2cMaster(
     reg [7:0] tLSB = 8'b0;                                  // Temp data LSB
     reg o_bit = 1'b1;                                       // output bit to SDA - starts HIGH
     reg [11:0] count = 12'b0;                               // State Machine Synchronizing Counter
-    reg [7:0] temp_data_reg;					            // Temp data buffer register			
+    reg [7:0] temp_data_reg;					            // Temp data buffer register		
+    reg signed [11:0] temp_data_full_precision_reg;                // Temp data full precision buffer register	
 
     // State Declarations - need 28 states
     localparam [4:0] POWER_UP   = 5'h00,
@@ -232,8 +234,10 @@ module I2cMaster(
     
     // Buffer for temperature data
     always @(posedge clk_200KHz)
-        if(state_reg == NACK)
+        if(state_reg == NACK) begin
             temp_data_reg <= { tMSB[6:0], tLSB[7] };
+            temp_data_full_precision_reg <= { tMSB[7:0], tLSB[7:4] };
+        end
     
     
     // Control direction of SDA bidirectional inout signal
@@ -244,6 +248,9 @@ module I2cMaster(
     assign SDA = SDA_dir ? o_bit : 1'bz;
     // Set value of input wire when SDA is used as an input - from sensor to master
     assign i_bit = SDA;
+
+    assign temp_data_full_precision = temp_data_full_precision_reg;
+
     // Outputted temperature data
     assign temp_data = temp_data_reg;
  

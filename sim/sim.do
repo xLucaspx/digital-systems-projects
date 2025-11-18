@@ -13,7 +13,7 @@ append SOURCES " "
 append SOURCES "../interface/TemperatureHumidity.sv"
 
 # Modules
-append SOURCES " ../rtl/nexys_fire_sensor/Seg7c.sv ../rtl/nexys_fire_sensor/I2cMaster.sv ../rtl/nexys_fire_sensor/Clkgen_200KHz.sv ../rtl/EdgeDetector.sv ../rtl/Co2Sensor.sv ../rtl/SoundBuzzer.sv ../rtl/TemperatureHumiditySensor.sv ../rtl/FireController.sv ../rtl/TopNexysA7.sv"
+append SOURCES " ../rtl/TemperatureMetrics.sv ../rtl/nexys_fire_sensor/Seg7c.sv ../rtl/nexys_fire_sensor/I2cMaster.sv ../rtl/nexys_fire_sensor/Clkgen_200KHz.sv ../rtl/EdgeDetector.sv ../rtl/Co2Sensor.sv ../rtl/SoundBuzzer.sv ../rtl/TemperatureHumiditySensor.sv ../rtl/FireController.sv ../rtl/TopNexysA7.sv"
 
 # Testbenches
 append SOURCES " ./TopNexysA7Tb.sv"
