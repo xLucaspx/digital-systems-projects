@@ -93,7 +93,7 @@ module Seg7c(
                     end
             
             3'o4 : begin       // C TEMPERATURE HUNDRED DIGIT
-                        case(c_tens)
+                        case(c_hundred)
                             4'b0000 : SEG = ZERO;
                             4'b0001 : SEG = ONE;
                             4'b0010 : SEG = TWO;
