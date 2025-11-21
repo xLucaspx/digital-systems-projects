@@ -42,6 +42,7 @@ logic fire_signal;
 FireController #(.SECONDS(7)) u_fireController (
 	.i_clock(i_clock),
 	.i_reset(i_reset),
+	.i_flame_sensor(i_flame_sensor),
 	.o_fire(fire_signal),
 	.costumer(u_temperatureHumidity)
 );
