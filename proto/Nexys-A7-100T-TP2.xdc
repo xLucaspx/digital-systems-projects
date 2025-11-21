@@ -26,8 +26,8 @@ create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_
 # set_property -dict { PACKAGE_PIN T13   IOSTANDARD LVCMOS33 } [get_ports { SW[11] }]; # IO_L23P_T3_A03_D19_14 Sch=sw[11]
 # set_property -dict { PACKAGE_PIN H6    IOSTANDARD LVCMOS33 } [get_ports { SW[12] }]; # IO_L24P_T3_35 Sch=sw[12]
 # set_property -dict { PACKAGE_PIN U12   IOSTANDARD LVCMOS33 } [get_ports { SW[13] }]; # IO_L20P_T3_A08_D24_14 Sch=sw[13]
-# set_property -dict { PACKAGE_PIN U11   IOSTANDARD LVCMOS33 } [get_ports { SW[14] }]; # IO_L19N_T3_A09_D25_VREF_14 Sch=sw[14]
-# set_property -dict { PACKAGE_PIN V10   IOSTANDARD LVCMOS33 } [get_ports { SW[15] }]; # IO_L21P_T3_DQS_14 Sch=sw[15]
+set_property -dict { PACKAGE_PIN U11   IOSTANDARD LVCMOS33 } [get_ports { i_fire_on }]; # IO_L19N_T3_A09_D25_VREF_14 Sch=sw[14]
+set_property -dict { PACKAGE_PIN V10   IOSTANDARD LVCMOS33 } [get_ports { i_simulation_switch }]; # IO_L21P_T3_DQS_14 Sch=sw[15]
 
 # LEDs
 set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 } [get_ports { o_leds[0] }];  # IO_L18P_T2_A24_15 Sch=led[0]
@@ -48,9 +48,9 @@ set_property -dict { PACKAGE_PIN V12   IOSTANDARD LVCMOS33 } [get_ports { o_leds
 set_property -dict { PACKAGE_PIN V11   IOSTANDARD LVCMOS33 } [get_ports { o_leds[15] }]; # IO_L21N_T3_DQS_A06_D22_14 Sch=led[15]
 
 # RGB LEDs
-# set_property -dict {PACKAGE_PIN R12 IOSTANDARD LVCMOS33} [get_ports {states_led[0]}]
-# set_property -dict {PACKAGE_PIN M16 IOSTANDARD LVCMOS33} [get_ports {states_led[1]}]
-# set_property -dict {PACKAGE_PIN N15 IOSTANDARD LVCMOS33} [get_ports {states_led[2]}]
+set_property -dict {PACKAGE_PIN R12 IOSTANDARD LVCMOS33} [get_ports {o_led_r}]
+set_property -dict {PACKAGE_PIN M16 IOSTANDARD LVCMOS33} [get_ports {o_led_g}]
+set_property -dict {PACKAGE_PIN N15 IOSTANDARD LVCMOS33} [get_ports {o_led_b}]
 # set_property -dict {PACKAGE_PIN G14 IOSTANDARD LVCMOS33} [get_ports {states_led[3]}]
 # set_property -dict {PACKAGE_PIN R11 IOSTANDARD LVCMOS33} [get_ports {states_led[4]}]
 # set_property -dict {PACKAGE_PIN N16 IOSTANDARD LVCMOS33} [get_ports {states_led[5]}]
@@ -148,7 +148,7 @@ set_property -dict { PACKAGE_PIN A13   IOSTANDARD LVCMOS33 } [get_ports { o_pin_
 set_property -dict { PACKAGE_PIN A16   IOSTANDARD LVCMOS33 } [get_ports { i_co2_sensor_data }]; # IO_L8N_T1_AD10N_15 Sch=xa_n[2]
 # set_property -dict { PACKAGE_PIN A15   IOSTANDARD LVCMOS33 } [get_ports { i_pin_AD10P}]; # IO_L8P_T1_AD10P_15 Sch=xa_p[2]
 # set_property -dict { PACKAGE_PIN B17   IOSTANDARD LVCMOS33 } [get_ports { i_pin_AD2N }]; # IO_L7N_T1_AD2N_15 Sch=xa_n[3]
-set_property -dict { PACKAGE_PIN B16   IOSTANDARD LVCMOS33 } [get_ports { b_inout_data_temperature_sensor }]; # IO_L7P_T1_AD2P_15 Sch=xa_p[3]
+# set_property -dict { PACKAGE_PIN B16   IOSTANDARD LVCMOS33 } [get_ports { b_inout_data_temperature_sensor }]; # IO_L7P_T1_AD2P_15 Sch=xa_p[3]
 # set_property -dict { PACKAGE_PIN A18   IOSTANDARD LVCMOS33 } [get_ports { i_pin_AD11N }]; # IO_L10N_T1_AD11N_15 Sch=xa_n[4]
 set_property -dict { PACKAGE_PIN B18   IOSTANDARD LVCMOS33 } [get_ports { i_flame_sensor}]; # IO_L10P_T1_AD11P_15 Sch=xa_p[4]
 

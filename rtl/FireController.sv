@@ -29,7 +29,7 @@ typedef enum logic [1:0] {
 
 state_t state, next_state;
 logic fire_detected;
-assign o_fire = (fire_detected || ~i_flame_sensor) ? 1'b1 : 1'b0;
+assign o_fire = (fire_detected || i_flame_sensor) ? 1'b1 : 1'b0;
 // Simple logic to detect a change in temperature
 always_ff @(posedge i_clock, posedge i_reset) begin
     if (i_reset) begin
