@@ -11,10 +11,11 @@
  * - AN:         4 Anodes of 8 to display temperature (degrees Celsius).
  */
 module Seg7c(
-	input clk_100MHz,
-	input [9:0] c_data,
-	output logic [6:0] SEG,
-	output logic [7:0] AN
+	input var logic clk_100MHz,
+	input var logic [9:0] c_data,
+
+	output var logic [6:0] SEG,
+	output var logic [7:0] AN
 );
 
 	localparam logic [7:0] ZERO  = 7'b000_0001;

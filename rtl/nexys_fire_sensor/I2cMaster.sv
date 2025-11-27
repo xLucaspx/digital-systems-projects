@@ -12,11 +12,12 @@
  * - temp_data_full_precision: 12 bits binary representation of temperature (degrees Celsius) with decimal precision.
  */
 module I2cMaster(
-	input clk_200KHz,
-	inout SDA,
-	output SCL,
-	output [7:0] temp_data,
-	output signed [11:0] temp_data_full_precision
+	input var logic clk_200KHz,
+	inout tri SDA,
+
+	output var logic SCL,
+	output var logic [7:0] temp_data,
+	output var signed [11:0] temp_data_full_precision
 );
 
 	localparam logic [7:0] SENSOR_ADDRESS_PLUS_READ = 8'b1001_0111; // 0x97

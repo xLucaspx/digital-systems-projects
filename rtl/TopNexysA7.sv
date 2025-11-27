@@ -83,7 +83,7 @@ module TopNexysA7(
 		.provider(u_temperature_humidity)
 	);
 
-	FireController #(.Seconds(7)) u_fireController (
+	FireController #(.Seconds(7)) u_fire_controller (
 		.i_clock(i_clock),
 		.i_reset(i_reset),
 		.i_flame_sensor(i_flame_sensor),
@@ -91,14 +91,14 @@ module TopNexysA7(
 		.costumer(u_temperature_humidity)
 	);
 
-	Co2Sensor u_Co2Sensor (
+	Co2Sensor u_co2_sensor (
 		.i_clock(i_clock),
 		.i_reset(i_reset),
 		.i_sensor_data(i_co2_sensor_data),
 		.o_gas_detected(co2_signal)
 	);
 
-	SoundBuzzer u_soundBuzzer (
+	SoundBuzzer u_sound_buzzer (
 		.i_clock(i_clock),
 		.i_reset(i_reset),
 		.i_sound(sound),
@@ -109,7 +109,7 @@ module TopNexysA7(
 
 	always_ff @(posedge i_clock, posedge i_reset) begin
 		if (i_reset) begin
-			o_leds <= 4'h0000;
+			o_leds <= 4'h0;
 			sound <= 0;
 		end else begin
 			o_leds [0] <= fire_signal;

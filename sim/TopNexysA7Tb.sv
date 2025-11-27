@@ -21,36 +21,37 @@ logic reset_fire = 1;
 logic set_temperature_edge = 0;
 logic [11:0] c_extended_data = 12'h100;
 
-Co2Sensor #(.Frequency(1)) u_Co2Sensor (
+Co2Sensor #(.Frequency(1)) u_co2_sensor (
 	.i_clock(clock),
 	.i_reset(reset),
 	.i_sensor_data(co2_sensor_data),
 	.o_gas_detected(co2_signal)
 );
 
-SoundBuzzer #(.Frequency(10)) u_soundBuzzer (
+SoundBuzzer #(.Frequency(10)) u_sound_buzzer (
 	.i_clock(clock),
 	.i_reset(reset),
 	.i_sound(sound),
 	.o_pin_sound(buzzer_sound)
 );
 
-TemperatureHumidity u_temperatureHumidity( .i_clock(clock) );
+TemperatureHumidity u_temperature_humidity( .i_clock(clock) );
 
-FireController #(.Frequency(100)) u_fireController (
+FireController #(.Frequency(100)) u_fire_controller (
 	.i_clock(clock),
 	.i_reset(reset_fire),
 	.o_fire(fire_signal),
 	.i_flame_sensor(flame_senor),
-	.costumer(u_temperatureHumidity)
+	.costumer(u_temperature_humidity)
 );
 
-TemperatureMetrics #(.FREQUENCY(100)) u_temperatureMetrics (
+TemperatureMetrics #(.Frequency(100)) u_temperature_metrics (
 	.i_clock(clock),
 	.i_reset(reset),
-	.i_set_standard_temperature(set_temperature_edge),
+	.i_simulation('0),
+	.i_fire_on(set_temperature_edge),
 	.i_temperature(c_extended_data),
-	.provider(u_temperatureHumidity)
+	.provider(u_temperature_humidity)
 );
 
 initial begin
@@ -112,7 +113,7 @@ initial begin
 	wait (fire_signal == 1);
 	repeat (10) begin
 		@(posedge clock)
-		$display ("Current Temperature: %0d", u_temperatureHumidity.temperature);
+		$display ("Current Temperature: %0d", u_temperature_humidity.temperature);
 	end
 	$display ("[PASSED] Fire detected due to temperature rise");
 

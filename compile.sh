@@ -14,9 +14,14 @@ if ! command -v vlog >/dev/null 2>&1; then
 fi
 
 SOURCES="
-	../rtl/EdgeDetector.sv
+	../interface/TemperatureHumidity.sv
+	../rtl/nexys_fire_sensor/Seg7c.sv
+	../rtl/nexys_fire_sensor/I2cMaster.sv
+	../rtl/nexys_fire_sensor/Clkgen_200KHz.sv
 	../rtl/Co2Sensor.sv
 	../rtl/SoundBuzzer.sv
+	../rtl/FireController.sv
+	../rtl/TemperatureMetrics.sv
 	../rtl/TopNexysA7.sv
 	./TopNexysA7Tb.sv
 "
