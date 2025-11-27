@@ -5,9 +5,11 @@
 
 ## Índice
 
-- [Visão Geral](#visão-geral);
-- [Estrutura do Projeto](#estrutura-do-projeto);
-- [Simulação](#simulação);
+- [Visão geral](#visão-geral);
+- [Estrutura do projeto](#estrutura-do-projeto);
+- [Equipamentos utilizados](#equipamentos-utilizados);
+- [Especificações técnicas](#especificações-técnicas);
+- [Detecção e simulação](#detecção-e-simulação);
 
 ## Visão geral
 
@@ -45,7 +47,7 @@ Além do sensor de temperatura, LEDs e _displays_, foram utilizados os seguintes
 - `AD11P`: Pino de dados conectado ao sensor de chama;
 - `AD3P`: Pino conectado ao _buzzer_.
 
-## Simulação e detecção
+## Detecção e simulação
 
 A detecção de fogão ligado ocorre com a combinação de 3 sensores: temperatura, CO2 e chama. Se a temperatura aumenta em
 uma taxa predefinida, acima de um _threshold_ é possível inferir que o fogão está ligado. Depois de um certo tempo, a
