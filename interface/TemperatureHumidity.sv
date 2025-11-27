@@ -9,8 +9,8 @@
  * [Wires]
  * - i_clock:       Clock do sistema.
  * - want_data:     `1` se o `Costumer` deseja receber os dados, `0` caso contrário.
- * - temperature:   Temperatura lida pelo sensor;
- * - humidity:      Umidade lida pelo sensor;
+ * - temperature:   Temperatura lida pelo sensor.
+ * - humidity:      Umidade lida pelo sensor.
  * - valid_info:    `1` se as informações lidas pelo sensor são válidas, `0` caso contrário.
  * - request_again: `1` se o `Costumer`deseja receber os dados novamente, `0` caso contrário.
  */
