@@ -18,9 +18,11 @@ isso serão utilizados sensores conectados a um FPGA (Nexys A7). Deve ser implem
 sensores com a placa e a lógica de extração dos dados recebidos de cada sensor, combinando-os para decidir se o fogão
 está ou não ligado e realizar uma ação, e.g., acender os leds da placa Nexys.
 
+[Repositório](https://github.com/xLucaspx/digital-systems-projects/tree/t4 "digital-systems-projects | GitHub").
+
 ## Estrutura do projeto
 
-- [docs](./docs/): Documentação e enunciado do trabalho;
+- [docs](./docs/): Apresentação e enunciado do trabalho;
 - [interface](./interface/): Interfaces;
 - [rtl](./rtl/): Descrição de _hardware_;
 - [sim](./sim/): _Testbenches_ e _scripts_ de simulação.
