@@ -49,16 +49,18 @@ Além do sensor de temperatura, LEDs e _displays_, foram utilizados os seguintes
 
 ## Detecção e simulação
 
-A detecção de fogão ligado ocorre com a combinação de 3 sensores: temperatura, CO2 e chama. Se a temperatura aumenta em
-uma taxa predefinida, acima de um _threshold_ é possível inferir que o fogão está ligado. Depois de um certo tempo, a
-temperatura pode estabilizar; neste momento os outros sensores servem para aumentar a assertividade da detecção: Se
-houver chama e/ou detecção de CO2 acima de uma faixa estabelecida, considera-se que o fogão continua ligado; caso
-contrário, ou caso a temperatura comece a decair a uma taxa predefinida, considera-se o fogão desligado.
+A detecção de fogão ligado ocorre com a combinação dos sensores de temperatura e chama. Se a temperatura aumenta a uma
+taxa predefinida, acima de um _threshold_ é possível inferir que o fogão está ligado. Depois de um certo tempo, a
+temperatura pode estabilizar; o sensor de chama serve para aumentar a assertividade da detecção: Se houver chama,
+considera-se que o fogão continua ligado; caso contrário, ou caso a temperatura comece a decair a uma taxa predefinida,
+considera-se o fogão desligado. No caso de detecção de CO2 acima de uma faixa estabelecida, considera-se que há algum
+problema e o comportamento de detecção ativa o _buzzer_.
 
 Foi desenvolvido um modo de simulação para facilitar o teste. Ao ativar a simulação, é possível aumentar a temperatura
 ao "ligar o fogão" (ativar um _switch_ da placa) e verificar o comportamento de detecção; do mesmo modo, ao desligar o
 _switch_, a temperatura deve cair e isso deve ser refletido no comportamento da placa. Também é possível "forçar" dados
-nos sensores (e.g., colocar luz no sensor de chama) para gerar diferentes situações de detecção.
+nos sensores (e.g., colocar luz no sensor de chama) para gerar diferentes situações de detecção e verificar o comportamento
+da placa.
 
 O _testbench_ foi utilizado para verificar se a lógica programada para os sensores estava funcional e se comportando
 conforme o esperado. A forma mais tradicional de executar o _testbench_ é acessar o diretório [**sim/**](./sim/) e
