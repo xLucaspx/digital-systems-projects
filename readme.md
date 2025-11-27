@@ -27,10 +27,10 @@ está ou não ligado e realizar uma ação, e.g., acender os leds da placa Nexys
 
 ## Equipamentos utilizados
 
-- Placa Nexys A7 (FPGA Artix 7);
+- Placa Nexys A7 (FPGA Artix 7, `xc7a100tcsg324-1`);
 	- Sensor de temperatura da placa Nexys A7.
-- Sensor de gás CO2 (FC-22 + MG811);
-- Sensor de chama (KY-026);
+- Sensor de gás CO2 (`FC-22` + `MG811`);
+- Sensor de chama (`KY-026`);
 - _Buzzer_;
 - Conversor de nível lógico (5V <-> 3.3V).
 
