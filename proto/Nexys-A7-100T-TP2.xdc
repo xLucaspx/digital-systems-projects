@@ -9,7 +9,7 @@
 
 # Clock signal
 set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 } [get_ports i_clock];
-create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_ports i_clock];
+create_clock -period 10 -name sys_clk_pin -waveform {0 5} -add [get_ports i_clock];
 
 # Switches
 # set_property -dict { PACKAGE_PIN J15   IOSTANDARD LVCMOS33 } [get_ports { SW[0] }];             #?? Sch=sw[0]

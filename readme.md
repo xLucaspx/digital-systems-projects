@@ -36,7 +36,7 @@ está ou não ligado e realizar uma ação, e.g., acender os leds da placa Nexys
 
 ## Especificações técnicas
 
-O _clock_ da placa foi definido para <>. O sinal de _reset_ é alto (`1`).
+O _clock_ da placa foi definido com período igual a 10 ns (100 MHz). O sinal de _reset_ é alto (`1`).
 
 Além do sensor de temperatura, LEDs e _displays_, foram utilizados os seguintes recursos da placa Nexys A7:
 
