@@ -8,126 +8,116 @@ initial forever #1 clock = ~clock;
 
 logic reset = 1;
 
+logic co2_sensor_data;
+logic co2_signal;
+
 logic sound = 0;
 logic buzzer_sound;
 
-SoundBuzzer #(.FREQUENCY(10)) u_soundBuzzer (
-        .i_clock(clock),
-        .i_reset(reset),
-        .i_sound(sound),
-        .o_pin_sound(buzzer_sound)
-    );
-// ################################################
-parameter integer TIME_CONTROLLER_SIGNAL = 40;
-parameter integer TIME_CONTROLLER_RESPONSE = 40;
-tri inout_data; // bidirectional data line
-logic inout_drive;
-logic inout_enable = 0;
-assign inout_data = inout_enable ? inout_drive : 1'bz;
-logic [39:0] data_array [0:4] = '{40'b0000_0010_1000_1100_0000_0001_0101_1111_1110_1110,
-                                40'b0000_0010_1000_1100_0000_0001_0101_1111_1110_1110,
-                                40'b0000_0001_1100_0010_0000_0000_1101_1111_1010_0010,
-                                40'b0000_0000_0111_1011_1000_0000_0011_0010_0010_1101,
-                                40'b0000_0011_1110_1000_0000_0000_0000_0000_1110_1011};
-integer count_bits;
-// ################################################
-TemperatureHumidity u_temperatureHumidity(.i_clock(clock));
+logic fire_signal;
+logic flame_senor = 1;
+logic reset_fire = 1;
 
-TemperatureHumiditySensor #(
-    .SIZE_OF_DATA(40),
-    .TIME_CONTROLLER_SIGNAL(TIME_CONTROLLER_SIGNAL),
-    .TIME_CONTROLLER_RESPONSE(TIME_CONTROLLER_RESPONSE)
-) u_temperatureHumiditySensor (
-    .i_clock(clock),
-    .i_reset(reset),
-    .b_data(inout_data),
-    .provider(u_temperatureHumidity) 
+logic set_temperature_edge = 0;
+logic [11:0] c_extended_data = 12'h100;
+
+Co2Sensor #(.Frequency(1)) u_co2_sensor (
+	.i_clock(clock),
+	.i_reset(reset),
+	.i_sensor_data(co2_sensor_data),
+	.o_gas_detected(co2_signal)
 );
+
+SoundBuzzer #(.Frequency(10)) u_sound_buzzer (
+	.i_clock(clock),
+	.i_reset(reset),
+	.i_sound(sound),
+	.o_pin_sound(buzzer_sound)
+);
+
+TemperatureHumidity u_temperature_humidity( .i_clock(clock) );
+
+FireController #(.Frequency(100)) u_fire_controller (
+	.i_clock(clock),
+	.i_reset(reset_fire),
+	.o_fire(fire_signal),
+	.i_flame_sensor(flame_senor),
+	.costumer(u_temperature_humidity)
+);
+
+TemperatureMetrics #(.Frequency(100)) u_temperature_metrics (
+	.i_clock(clock),
+	.i_reset(reset),
+	.i_simulation('0),
+	.i_fire_on(set_temperature_edge),
+	.i_temperature(c_extended_data),
+	.provider(u_temperature_humidity)
+);
+
 initial begin
 	repeat (5) @(posedge clock);
 	reset = 0;
 
-    $display ("================================");
-    $display ("Testing Buzzer");
-    $display ("================================");
-    sound = 1;
-    repeat (3) begin
-        @(posedge buzzer_sound);
-        @(negedge buzzer_sound);
-        $display ("Buzzer is making sound");
-    end
-    sound = 0;
-    if (buzzer_sound == 0) begin
-        $display ("Buzzer stopped");
-    end else begin
-        $display ("Buzzer did not stop");
-    end
+	$display ("================================");
+	$display ("Testing CO2 Sensor");
+	$display ("================================");
+	
+	repeat (3) begin
+		co2_sensor_data = 0;
+		#20;
+		if (co2_signal == 1) begin
+			$display ("[PASSED] CO2 detected as expected");
+		end else begin
+			$display ("[FAILED] CO2 not detected when it should be");
+		end
+		co2_sensor_data = 1;
+	end
 
-    $display ("================================");
-    $display ("Testing TemperatureHumiditySensor");
-    $display ("================================");
-    foreach (data_array[i]) begin
-        $display ("********************************");
-        $display ("Consumer want");
-        $display ("********************************");
+	$display ("================================");
+	$display ("Testing Buzzer");
+	$display ("================================");
 
-        u_temperatureHumidity.Costumer.want_data = 1;
-        $display ("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-        $display ("Sensor STATUS");
-        @(negedge inout_data);
-        $display ("Sensor Received request LOW");
-        @(posedge inout_data);
-        $display ("Sensor Received HIGH the line is free now");
-        $display ("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+	sound = 1;
+	repeat (3) begin
+		@(posedge buzzer_sound);
+		@(negedge buzzer_sound);
+		$display ("Buzzer is making sound");
+	end
 
-        u_temperatureHumidity.Costumer.want_data = 0;
-        #(TIME_CONTROLLER_RESPONSE);
+	sound = 0;
+	if (buzzer_sound == 0) begin
+		$display ("Buzzer stopped");
+	end else begin
+		$display ("Buzzer did not stop");
+	end
 
-        $display ("********************************");
-        $display ("Sensor sends LOW informing that it is going to send data");
-        inout_enable = 1;
-        inout_drive = 1'b0;
-        #(TIME_CONTROLLER_RESPONSE);
-        #(TIME_CONTROLLER_RESPONSE);
+	$display ("================================");
+	$display ("Testing Fire Controller");
+	$display ("================================");
+	
+	reset_fire= 0;
+	flame_senor =1;
+	#2;
+	if (fire_signal == 1) begin
+		$display ("[PASSED] Flame detected as expected");
+	end else begin
+		$display ("[FAILED] Flame not detected when it should be");
+	end
 
-        $display ("Sensor sends HIGH informing that it is going to send data");
+	flame_senor = 0;
+	set_temperature_edge = 1;
+	#2;
+	set_temperature_edge = 0;
+	#10;
+	c_extended_data = 12'h110; // Simulate temperature increase
+	wait (fire_signal == 1);
+	repeat (10) begin
+		@(posedge clock)
+		$display ("Current Temperature: %0d", u_temperature_humidity.temperature);
+	end
+	$display ("[PASSED] Fire detected due to temperature rise");
 
-        inout_drive = 1'b1;
-        #(TIME_CONTROLLER_RESPONSE);
-        #(TIME_CONTROLLER_RESPONSE);
-        $display ("********************************");
-        
-
-        count_bits = 39;
-        repeat (40) begin
-            inout_drive = 1'b0; // PUll the line low to start the bit transmission
-            #TIME_CONTROLLER_RESPONSE;
-            inout_drive = 1'b1;
-            if (data_array[i][count_bits]) begin
-                #TIME_CONTROLLER_RESPONSE;
-                #TIME_CONTROLLER_RESPONSE;
-                #TIME_CONTROLLER_RESPONSE;
-            end else begin
-                #(TIME_CONTROLLER_RESPONSE);
-            end
-            count_bits = count_bits - 1;
-        end
-        repeat (5) begin
-            @(posedge clock);
-            inout_drive = 1'b1;
-        end
-        inout_enable = 0;
-
-        if ({u_temperatureHumidity.Costumer.humidity, u_temperatureHumidity.Costumer.temperature} == data_array[i][39:8]) begin
-            $display ("[PASSED] Sent data: %h == %h", {u_temperatureHumidity.Costumer.humidity, u_temperatureHumidity.Costumer.temperature}, data_array[i][39:8]);
-        end else begin
-            $display ("[FAILED] Sent data: %h != %h", {u_temperatureHumidity.Costumer.humidity, u_temperatureHumidity.Costumer.temperature}, data_array[i][39:8]);
-        end
-        $display ("[INFO] Valid info signal: %b, request_again: %b ", u_temperatureHumidity.Costumer.valid_info, u_temperatureHumidity.Costumer.request_again);
-    end
-    $finish;
-
-
+	$finish;
 end
 
 endmodule: TopNexysA7Tb

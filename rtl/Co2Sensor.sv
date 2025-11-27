@@ -2,8 +2,21 @@
 
 /**
  * Módulo para comunicação com o sensor de gás carbônico (CO2). Identificador do sensor: FC-22 + MG811.
+ *
+ * [Parameters]
+ * - Seconds:   Número de segundos para checar o sensor.
+ * - Frequency: Frequência de operação.
+ *
+ * [Wires]
+ * - i_clock:        Clock do sistema.
+ * - i_reset:       `1` se o reset está ativo, `0` caso contrário.
+ * - i_sensor_data:  Dados lidos pelo sensor.
+ * - o_gas_detected: `1` se detectou CoO2, `0` caso contrário.
  */
-module Co2Sensor(
+module Co2Sensor#(
+	parameter integer Seconds = 5,
+	parameter integer Frequency = 100_000_000
+)(
 	input var logic i_clock,
 	input var logic i_reset,
 	input var logic i_sensor_data,
@@ -11,7 +24,40 @@ module Co2Sensor(
 	output var logic o_gas_detected
 );
 
+	logic gas_detected;
+	integer clock_counter;
+	integer count_seconds;
+
 	always_ff @(posedge i_clock, posedge i_reset)
-		o_gas_detected <= i_reset ? 1'b0 : i_sensor_data;
+		o_gas_detected <= i_reset ? 1'b0 : gas_detected;
+
+	/**
+	 * Detect CO2 gas presence logic after a certain period of time.
+	 */
+	always_ff @(posedge i_clock, posedge i_reset) begin
+		if (i_reset) begin
+			gas_detected <= 1'b0;
+			clock_counter <= 0;
+			count_seconds <= 0;
+		end
+		else begin
+			if (count_seconds >= Seconds) begin
+				gas_detected <= 1'b1;
+				count_seconds <= 0;
+			end
+			else if (clock_counter == (Frequency - 1)) begin
+				clock_counter <= 1'b0;
+				count_seconds <= count_seconds + 1;
+			end
+			else if (~i_sensor_data) begin
+				clock_counter <= clock_counter + 1;
+			end
+			else begin
+				clock_counter <=  1'b0;
+				count_seconds <= 0;
+				gas_detected <= 1'b0;
+			end
+		end
+	end
 
 endmodule: Co2Sensor

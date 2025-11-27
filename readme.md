@@ -3,47 +3,68 @@
 - Lucas da Paz Oliveira;
 - Rodrigo Miotto Slongo.
 
-## TODO
-
-Adicionando estrutura básica do projeto.
-
-- [x] **Utilizar apenas `posedge` em blocos `always`**.
-
-- [ ] Pesquisar protocolos de comunicação dos sensores;
-  - [ ] Se necessário, buscar módulos prontos que implementam os protocolos utilizados.
-- [ ] Escrever um módulo para a comunicação com cada sensor;
-- [ ] Conectar os módulos dos sensores ao `TopNexysA7` e criar lógica de detecção de fogão ligado;
-- [ ] Criar testbench para testar a lógica definida;
-- [ ] Gerar bitstream e testar na placa;
-- [ ] Ajustar documentação:
-  - [ ] Revisar estrutura do projeto e respectivas descrições;
-  - [ ] Descrever o testbench;
-  - [ ] Adicionar forma de onda.
-
 ## Índice
 
-- [Visão Geral](#visão-geral);
-- [Estrutura do Projeto](#estrutura-do-projeto);
-- [Simulação](#simulação);
+- [Visão geral](#visão-geral);
+- [Estrutura do projeto](#estrutura-do-projeto);
+- [Equipamentos utilizados](#equipamentos-utilizados);
+- [Especificações técnicas](#especificações-técnicas);
+- [Detecção e simulação](#detecção-e-simulação);
 
-## Visão Geral
+## Visão geral
 
 Este trabalho tem como objetivo a implementação, em System Verilog, de um sistema para detecção de um fogão ligado. Para
 isso serão utilizados sensores conectados a um FPGA (Nexys A7). Deve ser implementada a lógica de comunicação dos
 sensores com a placa e a lógica de extração dos dados recebidos de cada sensor, combinando-os para decidir se o fogão
 está ou não ligado e realizar uma ação, e.g., acender os leds da placa Nexys.
 
-## Estrutura do Projeto
+## Estrutura do projeto
 
 - [docs](./docs/): Documentação e enunciado do trabalho;
 - [interface](./interface/): Interfaces;
 - [rtl](./rtl/): Descrição de _hardware_;
 - [sim](./sim/): _Testbenches_ e _scripts_ de simulação.
 
-## Simulação
+## Equipamentos utilizados
 
-A forma mais tradicional de executar a simulação é acessar o diretório [**sim/**](./sim/) e executar o comando `vsim`
-passando o arquivo [`sim.do`](./sim/sim.do):
+- Placa Nexys A7 (FPGA Artix 7, `xc7a100tcsg324-1`);
+	- Sensor de temperatura da placa Nexys A7.
+- Sensor de gás CO2 (`FC-22` + `MG811`);
+- Sensor de chama (`KY-026`);
+- _Buzzer_;
+- Conversor de nível lógico (5V <-> 3.3V).
+
+## Especificações técnicas
+
+O _clock_ da placa foi definido com período igual a 10 ns (100 MHz). O sinal de _reset_ é alto (`1`).
+
+Além do sensor de temperatura, LEDs e _displays_, foram utilizados os seguintes recursos da placa Nexys A7:
+
+- `N17`: Botão de _reset_;
+- `V10`: _Switch_ para ativar modo de simulação;
+- `U11`: _Switch_ para aumentar a temperatura ("ligar o fogão") no modo de simulação;
+- `AD10N`: Pino de dados conectado ao sensor de CO2;
+- `AD11P`: Pino de dados conectado ao sensor de chama;
+- `AD3P`: Pino conectado ao _buzzer_.
+
+## Detecção e simulação
+
+A detecção de fogão ligado ocorre com a combinação dos sensores de temperatura e chama. Se a temperatura aumenta a uma
+taxa predefinida, acima de um _threshold_ é possível inferir que o fogão está ligado. Depois de um certo tempo, a
+temperatura pode estabilizar; o sensor de chama serve para aumentar a assertividade da detecção: Se houver chama,
+considera-se que o fogão continua ligado; caso contrário, ou caso a temperatura comece a decair a uma taxa predefinida,
+considera-se o fogão desligado. No caso de detecção de CO2 acima de uma faixa estabelecida, considera-se que há algum
+problema e o comportamento de detecção ativa o _buzzer_.
+
+Foi desenvolvido um modo de simulação para facilitar o teste. Ao ativar a simulação, é possível aumentar a temperatura
+ao "ligar o fogão" (ativar um _switch_ da placa) e verificar o comportamento de detecção; do mesmo modo, ao desligar o
+_switch_, a temperatura deve cair e isso deve ser refletido no comportamento da placa. Também é possível "forçar" dados
+nos sensores (e.g., colocar luz no sensor de chama) para gerar diferentes situações de detecção e verificar o comportamento
+da placa.
+
+O _testbench_ foi utilizado para verificar se a lógica programada para os sensores estava funcional e se comportando
+conforme o esperado. A forma mais tradicional de executar o _testbench_ é acessar o diretório [**sim/**](./sim/) e
+executar o comando `vsim` passando o arquivo [`sim.do`](./sim/sim.do):
 
 ```sh
 cd ./sim/
