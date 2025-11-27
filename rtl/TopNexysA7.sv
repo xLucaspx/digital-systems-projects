@@ -74,7 +74,7 @@ module TopNexysA7(
 		.AN(o_an)
 	);
 
-	TemperatureMetrics #(.SECONDS(3)) u_temperature_metrics (
+	TemperatureMetrics #(.Seconds(3)) u_temperature_metrics (
 		.i_clock(i_clock),
 		.i_reset(i_reset),
 		.i_simulation(i_simulation_switch),
